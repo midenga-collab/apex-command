@@ -1,0 +1,3108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SDVOSB Command Center</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #0f1318;
+    --bg3: #151a21;
+    --border: #1e2730;
+    --border2: #2a3540;
+    --accent: #00d4ff;
+    --accent2: #00ff88;
+    --accent3: #ff6b35;
+    --gold: #ffd166;
+    --text: #e8edf2;
+    --text2: #8a9bb0;
+    --text3: #4a5a6a;
+    --red: #ff4757;
+    --card: #0d1117;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── SCAN LINE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,212,255,0.015) 2px, rgba(0,212,255,0.015) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,212,255,0.4);
+  }
+  .logo span { color: var(--gold); }
+
+  .status-bar {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    letter-spacing: 1px;
+  }
+  .status-pill .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent2);
+    box-shadow: 0 0 8px var(--accent2);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* ── NAV TABS ── */
+  nav {
+    display: flex;
+    gap: 2px;
+    padding: 0 32px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+
+  .tab {
+    padding: 12px 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .tab:hover { color: var(--text2); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── MAIN LAYOUT ── */
+  main { padding: 24px 32px; max-width: 1600px; margin: 0 auto; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── SETUP WIZARD ── */
+  .setup-hero {
+    text-align: center;
+    padding: 48px 0 32px;
+  }
+  .setup-hero h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 72px;
+    letter-spacing: 4px;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+  .setup-hero p {
+    color: var(--text2);
+    font-size: 16px;
+    max-width: 560px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .setup-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 32px;
+  }
+
+  .setup-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    transition: border-color 0.2s;
+  }
+  .setup-card:hover { border-color: var(--border2); }
+  .setup-card.full { grid-column: 1 / -1; }
+
+  .card-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .card-desc {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  .field-group { margin-bottom: 14px; }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  input, textarea, select {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  input::placeholder, textarea::placeholder { color: var(--text3); }
+  textarea { resize: vertical; min-height: 80px; }
+  select option { background: var(--bg3); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 600;
+  }
+  .btn-primary:hover { background: #00b8e0; box-shadow: 0 0 20px rgba(0,212,255,0.3); }
+
+  .btn-success {
+    background: var(--accent2);
+    color: var(--bg);
+    font-weight: 600;
+  }
+  .btn-success:hover { background: #00e07a; box-shadow: 0 0 20px rgba(0,255,136,0.3); }
+
+  .btn-warning {
+    background: var(--gold);
+    color: var(--bg);
+    font-weight: 600;
+  }
+  .btn-warning:hover { background: #f0c050; }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-danger {
+    background: var(--red);
+    color: white;
+    font-weight: 600;
+  }
+
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── METRIC CARDS ── */
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .metric-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .metric-card.blue::before { background: var(--accent); }
+  .metric-card.green::before { background: var(--accent2); }
+  .metric-card.orange::before { background: var(--accent3); }
+  .metric-card.gold::before { background: var(--gold); }
+
+  .metric-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 8px;
+  }
+
+  .metric-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 2px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .metric-card.blue .metric-value { color: var(--accent); }
+  .metric-card.green .metric-value { color: var(--accent2); }
+  .metric-card.orange .metric-value { color: var(--accent3); }
+  .metric-card.gold .metric-value { color: var(--gold); }
+
+  .metric-sub {
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  /* ── TWO COL LAYOUT ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* ── PANEL ── */
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+
+  .panel-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-body { padding: 18px; }
+
+  /* ── OPPORTUNITY ITEMS ── */
+  .opp-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .opp-item {
+    padding: 14px 16px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .opp-item:hover { border-color: var(--border2); background: var(--bg2); }
+  .opp-item.priority-IMMEDIATE { border-left: 3px solid var(--red); }
+  .opp-item.priority-HIGH { border-left: 3px solid var(--accent3); }
+  .opp-item.priority-MEDIUM { border-left: 3px solid var(--gold); }
+  .opp-item.priority-LOW { border-left: 3px solid var(--text3); }
+
+  .opp-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .opp-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    flex: 1;
+    padding-right: 12px;
+    line-height: 1.4;
+  }
+
+  .badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge-red { background: rgba(255,71,87,0.2); color: var(--red); border: 1px solid rgba(255,71,87,0.3); }
+  .badge-orange { background: rgba(255,107,53,0.2); color: var(--accent3); border: 1px solid rgba(255,107,53,0.3); }
+  .badge-gold { background: rgba(255,209,102,0.15); color: var(--gold); border: 1px solid rgba(255,209,102,0.3); }
+  .badge-blue { background: rgba(0,212,255,0.15); color: var(--accent); border: 1px solid rgba(0,212,255,0.3); }
+  .badge-green { background: rgba(0,255,136,0.15); color: var(--accent2); border: 1px solid rgba(0,255,136,0.3); }
+  .badge-gray { background: rgba(138,155,176,0.1); color: var(--text3); border: 1px solid var(--border); }
+
+  .opp-meta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .opp-meta-item {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .score-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .score-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+
+  /* ── AI OUTPUT ── */
+  .ai-output {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text2);
+    white-space: pre-wrap;
+    min-height: 120px;
+    position: relative;
+  }
+
+  .ai-output.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ai-spinner {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .ai-spinner span {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: bounce 0.8s infinite;
+  }
+  .ai-spinner span:nth-child(2) { animation-delay: 0.15s; }
+  .ai-spinner span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+
+  /* ── PROGRESS STEPS ── */
+  .steps {
+    display: flex;
+    gap: 0;
+    margin-bottom: 32px;
+  }
+  .step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+  }
+  .step::after {
+    content: '';
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    width: 100%;
+    height: 2px;
+    background: var(--border);
+  }
+  .step:last-child::after { display: none; }
+
+  .step-circle {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    position: relative;
+    z-index: 1;
+    transition: all 0.3s;
+  }
+  .step.done .step-circle { background: var(--accent2); border-color: var(--accent2); color: var(--bg); }
+  .step.active .step-circle { background: var(--accent); border-color: var(--accent); color: var(--bg); box-shadow: 0 0 16px rgba(0,212,255,0.4); }
+
+  .step-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+  .step.active .step-label { color: var(--accent); }
+  .step.done .step-label { color: var(--accent2); }
+
+  /* ── TABLE ── */
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    text-align: left;
+    padding: 10px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+  }
+  .data-table td {
+    padding: 12px 12px;
+    font-size: 12px;
+    color: var(--text2);
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--bg3); }
+  .data-table .td-primary { color: var(--text); font-weight: 500; }
+
+  /* ── ALERT ── */
+  .alert {
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .alert-info { background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); color: var(--accent); }
+  .alert-warn { background: rgba(255,209,102,0.08); border: 1px solid rgba(255,209,102,0.2); color: var(--gold); }
+  .alert-success { background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2); color: var(--accent2); }
+  .alert-danger { background: rgba(255,71,87,0.08); border: 1px solid rgba(255,71,87,0.2); color: var(--red); }
+
+  /* ── GAP ANALYSIS SECTION ── */
+  .gap-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+  .gap-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .gap-severity {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .sev-critical { background: var(--red); box-shadow: 0 0 8px var(--red); }
+  .sev-high { background: var(--accent3); box-shadow: 0 0 8px var(--accent3); }
+  .sev-medium { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
+  .sev-low { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); }
+
+  .gap-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .gap-body { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .gap-fix {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: var(--bg3);
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--accent2);
+    border-left: 2px solid var(--accent2);
+  }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 24px;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 680px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg2);
+  }
+
+  .modal-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .modal-close {
+    width: 28px; height: 28px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+  .modal-close:hover { background: var(--red); border-color: var(--red); color: white; }
+
+  .modal-body { padding: 24px; }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 0;
+  }
+
+  /* ── CHECKBOX LIST ── */
+  .check-list { display: flex; flex-direction: column; gap: 8px; }
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .check-item:hover { border-color: var(--border2); }
+  .check-item input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent2); }
+  .check-item.checked { border-color: rgba(0,255,136,0.3); background: rgba(0,255,136,0.04); }
+  .check-label { font-size: 13px; color: var(--text); }
+  .check-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  /* ── COPY BTN ── */
+  .copy-btn {
+    position: absolute;
+    top: 8px; right: 8px;
+    padding: 4px 10px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text3);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── TOOLTIP ── */
+  .tooltip {
+    position: relative;
+    display: inline-block;
+  }
+  .tooltip .tip {
+    visibility: hidden;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    text-align: center;
+    padding: 6px 10px;
+    border-radius: 4px;
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 999;
+  }
+  .tooltip:hover .tip { visibility: visible; }
+
+  /* ── NAICS TAGS ── */
+  .tag-cloud { display: flex; flex-wrap: wrap; gap: 6px; }
+  .naics-tag {
+    padding: 4px 10px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .naics-tag:hover, .naics-tag.selected {
+    background: rgba(0,212,255,0.1);
+    border-color: rgba(0,212,255,0.3);
+    color: var(--accent);
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+  /* ── LOADING SCREEN ── */
+  #loading-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9998;
+    transition: opacity 0.5s;
+  }
+  #loading-screen.hidden { opacity: 0; pointer-events: none; }
+
+  .loading-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-shadow: 0 0 30px rgba(0,212,255,0.5);
+    margin-bottom: 32px;
+  }
+
+  .loading-bar {
+    width: 240px;
+    height: 2px;
+    background: var(--border);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+  .loading-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 1px;
+    animation: loadprog 1.5s ease forwards;
+  }
+  @keyframes loadprog { from{width:0} to{width:100%} }
+
+  .loading-text {
+    margin-top: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--text3);
+    text-transform: uppercase;
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text3);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-title { font-size: 16px; color: var(--text2); margin-bottom: 8px; }
+  .empty-desc { font-size: 13px; line-height: 1.6; }
+
+  /* ── PIPELINE STAGE ── */
+  .pipeline {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  .pipe-stage {
+    flex: 0 0 200px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .pipe-header {
+    padding: 10px 14px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .pipe-count {
+    background: var(--bg2);
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 10px;
+  }
+  .pipe-items { padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .pipe-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-size: 11px;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1.4;
+  }
+  .pipe-card:hover { border-color: var(--border2); color: var(--text); }
+
+  /* ── NOTIFICATION TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-size: 13px;
+    color: var(--text);
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 9999;
+    max-width: 300px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { border-color: rgba(0,255,136,0.4); }
+  #toast.error { border-color: rgba(255,71,87,0.4); }
+
+  /* ── RESP. ── */
+  @media (max-width: 900px) {
+    header { padding: 12px 16px; }
+    nav { padding: 0 16px; }
+    main { padding: 16px; }
+    .setup-grid, .two-col, .three-col { grid-template-columns: 1fr; }
+    .metrics-row { grid-template-columns: 1fr 1fr; }
+    .setup-hero h1 { font-size: 48px; }
+    .setup-card.full { grid-column: 1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading-screen">
+  <div class="loading-logo">APEX COMMAND</div>
+  <div class="loading-bar"><div class="loading-fill"></div></div>
+  <div class="loading-text">Initializing System</div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">APEX <span>COMMAND</span></div>
+  <div class="status-bar">
+    <div class="status-pill"><div class="dot"></div>SYSTEM ONLINE</div>
+    <div class="status-pill" id="apiStatus">● API: NOT CONFIGURED</div>
+    <div class="status-pill" id="currentTime"></div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav>
+  <div class="tab active" onclick="showTab('setup')">⚙ Setup</div>
+  <div class="tab" onclick="showTab('gaps')">⚠ Gap Analysis</div>
+  <div class="tab" onclick="showTab('scanner')">🔍 Opportunity Scanner</div>
+  <div class="tab" onclick="showTab('drafts')">✍ Response Drafts</div>
+  <div class="tab" onclick="showTab('pipeline')">📊 Pipeline CRM</div>
+  <div class="tab" onclick="showTab('subs')">🤝 Sub Intelligence</div>
+  <div class="tab" onclick="showTab('co')">📞 CO Outreach</div>
+  <div class="tab" onclick="showTab('recompete')">🔄 Recompete Intel</div>
+  <div class="tab" onclick="showTab('briefing')">☀ Morning Briefing</div>
+</nav>
+
+<main>
+
+<!-- ══════════════════════════════════════ SETUP ══════════════════════════════════════ -->
+<div id="tab-setup" class="section active">
+  <div class="setup-hero">
+    <h1>APEX COMMAND</h1>
+    <p>Your AI-powered SDVOSB contracting command center. Configure once, win contracts on autopilot.</p>
+  </div>
+
+  <div class="steps">
+    <div class="step done" id="step1">
+      <div class="step-circle">✓</div>
+      <div class="step-label">Company</div>
+    </div>
+    <div class="step active" id="step2">
+      <div class="step-circle">2</div>
+      <div class="step-label">API Keys</div>
+    </div>
+    <div class="step" id="step3">
+      <div class="step-circle">3</div>
+      <div class="step-label">Strategy</div>
+    </div>
+    <div class="step" id="step4">
+      <div class="step-circle">4</div>
+      <div class="step-label">Targets</div>
+    </div>
+    <div class="step" id="step5">
+      <div class="step-circle">5</div>
+      <div class="step-label">Launch</div>
+    </div>
+  </div>
+
+  <div class="setup-grid">
+
+    <!-- Company Profile -->
+    <div class="setup-card">
+      <div class="card-label">Step 1 — Company Profile</div>
+      <div class="card-title">Your SDVOSB Identity</div>
+      <div class="card-desc">This data appears in every capability statement and response the AI generates for you.</div>
+      <div class="field-group">
+        <label>Company Name</label>
+        <input type="text" id="companyName" placeholder="e.g., Apex Federal Solutions LLC" oninput="saveProfile()">
+      </div>
+      <div class="field-group">
+        <label>UEI Number (from SAM.gov)</label>
+        <input type="text" id="companyUEI" placeholder="e.g., ABCD1234EFGH" oninput="saveProfile()">
+      </div>
+      <div class="field-group">
+        <label>CAGE Code</label>
+        <input type="text" id="companyCage" placeholder="e.g., 9XY12" oninput="saveProfile()">
+      </div>
+      <div class="field-group">
+        <label>VetCert Certification Number</label>
+        <input type="text" id="companyCert" placeholder="e.g., SDV-2024-XXXXX" oninput="saveProfile()">
+      </div>
+      <div class="field-group">
+        <label>Primary Point of Contact</label>
+        <input type="text" id="companyPOC" placeholder="Your name and title" oninput="saveProfile()">
+      </div>
+      <div class="field-group">
+        <label>Email / Phone</label>
+        <input type="text" id="companyContact" placeholder="email@company.com | 555-000-0000" oninput="saveProfile()">
+      </div>
+      <div class="field-group">
+        <label>Business Address (City, State)</label>
+        <input type="text" id="companyAddress" placeholder="e.g., Atlanta, GA" oninput="saveProfile()">
+      </div>
+    </div>
+
+    <!-- API Keys -->
+    <div class="setup-card">
+      <div class="card-label">Step 2 — API Keys</div>
+      <div class="card-title">Connect Your Intelligence Sources</div>
+      <div class="card-desc">Keys are stored locally in your browser only. Never sent anywhere except the official APIs.</div>
+
+      <div class="alert alert-warn">⚠ Get your Claude API key at <strong>console.anthropic.com</strong> → API Keys. You'll need to add a credit card. Budget ~$20–50/month for heavy use.</div>
+
+      <div class="field-group">
+        <label>Claude API Key (Anthropic) — REQUIRED</label>
+        <input type="password" id="claudeKey" placeholder="sk-ant-api03-..." oninput="saveKeys(); checkKeys()">
+      </div>
+
+      <div class="alert alert-info">ℹ Get your SAM.gov API key at <strong>sam.gov</strong> → Profile → Public API Key. Free. Takes 10 days to approve.</div>
+
+      <div class="field-group">
+        <label>SAM.gov API Key — REQUIRED for Scanner</label>
+        <input type="password" id="samKey" placeholder="Your SAM.gov API key" oninput="saveKeys(); checkKeys()">
+      </div>
+
+      <div style="margin-top: 16px;">
+        <button class="btn btn-primary" onclick="testKeys()">▶ Test Connection</button>
+        <span id="keyTestResult" style="margin-left: 12px; font-size: 12px; color: var(--text2);"></span>
+      </div>
+    </div>
+
+    <!-- Capability Statement -->
+    <div class="setup-card full">
+      <div class="card-label">Step 3 — Capability Statement Core</div>
+      <div class="card-title">What Your Company Does</div>
+      <div class="card-desc">Write 2-3 sentences describing your core offering. The AI expands this into full capability statements tailored to each opportunity.</div>
+      <div class="field-group">
+        <label>Core Capability Description</label>
+        <textarea id="coreCapability" rows="4" placeholder="e.g., We provide healthcare equipment management, IT staffing, and facilities management services to federal agencies. As a certified SDVOSB based in Atlanta, GA, we operate a national subcontractor network enabling rapid deployment across all VA and DoD regions. Our Apex Middleman model ensures mission-critical contracts are staffed by vetted, credentialed professionals." oninput="saveProfile()"></textarea>
+      </div>
+      <div class="field-group">
+        <label>Past Performance / Key Personnel Experience (even if pre-company)</label>
+        <textarea id="pastPerf" rows="3" placeholder="e.g., Team includes veterans with 15+ years managing federal DME contracts, IT staffing programs, and facilities operations across DoD and VA environments." oninput="saveProfile()"></textarea>
+      </div>
+    </div>
+
+    <!-- NAICS Selection -->
+    <div class="setup-card full">
+      <div class="card-label">Step 4 — NAICS Code Targets</div>
+      <div class="card-title">Select Your Active NAICS Codes</div>
+      <div class="card-desc">Click all codes you've added to your SAM.gov profile. The scanner will use these to filter opportunities.</div>
+      <div class="tag-cloud" id="naicsCloud"></div>
+    </div>
+
+    <!-- Target Agencies -->
+    <div class="setup-card">
+      <div class="card-label">Step 5 — Target Agencies</div>
+      <div class="card-title">Priority Agencies</div>
+      <div class="card-desc">Select agencies behind on SDVOSB goals — highest win probability.</div>
+      <div class="check-list" id="agencyList"></div>
+    </div>
+
+    <!-- Strategy Config -->
+    <div class="setup-card">
+      <div class="card-label">Step 5 — Strategy Config</div>
+      <div class="card-title">Pursuit Parameters</div>
+      <div class="card-desc">Define your target opportunity profile.</div>
+      <div class="field-group">
+        <label>Minimum Contract Value ($)</label>
+        <input type="number" id="minValue" value="100000" oninput="saveProfile()">
+      </div>
+      <div class="field-group">
+        <label>Maximum Contract Value ($)</label>
+        <input type="number" id="maxValue" value="4000000" oninput="saveProfile()">
+      </div>
+      <div class="field-group">
+        <label>Your Management Fee % (what you keep)</label>
+        <input type="number" id="feePercent" value="20" min="10" max="35" oninput="saveProfile()">
+      </div>
+      <div class="field-group">
+        <label>Margin of Last Resort % (minimum acceptable)</label>
+        <input type="number" id="minFee" value="12" min="5" max="25" oninput="saveProfile()">
+      </div>
+      <div class="field-group">
+        <label>Focus Geography</label>
+        <select id="geoFocus" onchange="saveProfile()">
+          <option value="national">National (All States)</option>
+          <option value="southeast">Southeast Priority</option>
+          <option value="remote">Remote/Rural Priority</option>
+          <option value="va">VA Regions Only</option>
+        </select>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <button class="btn btn-success" onclick="finalizeSetup()">✓ Save Configuration & Launch</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ GAP ANALYSIS ══════════════════════════════════════ -->
+<div id="tab-gaps" class="section">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:2px; color:var(--text);">STRATEGY GAP ANALYSIS</div>
+      <div style="font-size:13px; color:var(--text2);">Critical gaps identified in your current gameplan with specific fixes</div>
+    </div>
+    <button class="btn btn-primary" onclick="runAIGapAnalysis()">🤖 Run AI Deep Analysis</button>
+  </div>
+
+  <div id="gapContent"></div>
+</div>
+
+<!-- ══════════════════════════════════════ SCANNER ══════════════════════════════════════ -->
+<div id="tab-scanner" class="section">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:gap;">
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:2px; color:var(--text);">OPPORTUNITY SCANNER</div>
+      <div style="font-size:13px; color:var(--text2);">Live feed from SAM.gov — all notice types, scored by win probability</div>
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <select id="filterType" style="width:160px;">
+        <option value="">All Types</option>
+        <option value="r">Sources Sought</option>
+        <option value="p">Pre-Solicitation</option>
+        <option value="o">Solicitation</option>
+        <option value="k">Combined Synopsis</option>
+        <option value="a">Award Notices</option>
+      </select>
+      <select id="filterPriority" style="width:140px;">
+        <option value="">All Priorities</option>
+        <option value="IMMEDIATE">🔴 Immediate</option>
+        <option value="HIGH">🟠 High</option>
+        <option value="MEDIUM">🟡 Medium</option>
+      </select>
+      <button class="btn btn-primary" onclick="runScanner()">⚡ Scan Now</button>
+      <button class="btn btn-ghost" onclick="exportOpps()">↓ Export CSV</button>
+    </div>
+  </div>
+
+  <div class="metrics-row">
+    <div class="metric-card blue">
+      <div class="metric-label">Total Found</div>
+      <div class="metric-value" id="m-total">—</div>
+      <div class="metric-sub">This scan</div>
+    </div>
+    <div class="metric-card green">
+      <div class="metric-label">SDVOSB Set-Aside</div>
+      <div class="metric-value" id="m-sdvosb">—</div>
+      <div class="metric-sub">Your lane</div>
+    </div>
+    <div class="metric-card orange">
+      <div class="metric-label">Immediate Action</div>
+      <div class="metric-value" id="m-immediate">—</div>
+      <div class="metric-sub">Score 80+, &lt;7 days</div>
+    </div>
+    <div class="metric-card gold">
+      <div class="metric-label">Pipeline Value</div>
+      <div class="metric-value" id="m-value">—</div>
+      <div class="metric-sub">Est. total value</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">📋 OPPORTUNITIES <span id="oppCount" style="color:var(--text3)"></span></div>
+      <div style="display:flex; gap:6px;">
+        <input type="text" id="oppSearch" placeholder="Search..." style="width:200px; padding:6px 12px; font-size:12px;" oninput="filterOpps()">
+      </div>
+    </div>
+    <div class="panel-body">
+      <div id="oppList">
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <div class="empty-title">No scan run yet</div>
+          <div class="empty-desc">Click "Scan Now" to pull live opportunities from SAM.gov<br>matching your NAICS codes and filters.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ DRAFTS ══════════════════════════════════════ -->
+<div id="tab-drafts" class="section">
+  <div style="font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:2px; color:var(--text); margin-bottom:4px;">AI RESPONSE DRAFTS</div>
+  <div style="font-size:13px; color:var(--text2); margin-bottom:24px;">Generate government-ready responses in seconds. Review, customize, submit.</div>
+
+  <div class="two-col">
+    <div>
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-header">
+          <div class="panel-title">📄 Response Type</div>
+        </div>
+        <div class="panel-body">
+          <div class="field-group">
+            <label>What Are You Responding To?</label>
+            <select id="responseType">
+              <option value="sources_sought">Sources Sought Response</option>
+              <option value="rfq">RFQ Quote (Under $250K)</option>
+              <option value="combined">Combined Synopsis Response</option>
+              <option value="rfp_intro">RFP Executive Summary + Approach</option>
+              <option value="capability">Capability Statement (General)</option>
+              <option value="co_intro">CO Introduction Email</option>
+              <option value="presol">Pre-Solicitation Contact Email</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>Paste Opportunity Title / Description</label>
+            <textarea id="oppDesc" rows="5" placeholder="Paste the SAM.gov notice title and key requirements here. The more detail you give, the better the AI tailors the response."></textarea>
+          </div>
+          <div class="field-group">
+            <label>Agency</label>
+            <input type="text" id="draftAgency" placeholder="e.g., Department of Veterans Affairs, VISN 7">
+          </div>
+          <div class="field-group">
+            <label>NAICS Code</label>
+            <input type="text" id="draftNaics" placeholder="e.g., 532283">
+          </div>
+          <div class="field-group">
+            <label>Estimated Value (if known)</label>
+            <input type="text" id="draftValue" placeholder="e.g., $500,000">
+          </div>
+          <div class="field-group">
+            <label>Response Deadline</label>
+            <input type="date" id="draftDeadline">
+          </div>
+          <button class="btn btn-primary" style="width:100%;" onclick="generateResponse()">🤖 Generate Response</button>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">✍ GENERATED RESPONSE</div>
+          <button class="btn btn-ghost" onclick="copyDraft()" style="font-size:10px; padding:4px 10px;">COPY</button>
+        </div>
+        <div class="panel-body">
+          <div id="draftOutput" class="ai-output">
+            <div style="color:var(--text3); font-size:13px;">Your AI-generated response will appear here.<br><br>Fill in the form on the left and click Generate.</div>
+          </div>
+          <div style="margin-top: 12px; display:flex; gap:8px; flex-wrap:wrap;" id="draftActions" style="display:none;">
+            <button class="btn btn-success" onclick="saveDraftToPipeline()">+ Save to Pipeline</button>
+            <button class="btn btn-ghost" onclick="refineDraft('shorter')">Make Shorter</button>
+            <button class="btn btn-ghost" onclick="refineDraft('stronger')">Strengthen Win Themes</button>
+            <button class="btn btn-ghost" onclick="refineDraft('formal')">More Formal</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ PIPELINE ══════════════════════════════════════ -->
+<div id="tab-pipeline" class="section">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:2px; color:var(--text);">PIPELINE CRM</div>
+      <div style="font-size:13px; color:var(--text2);">Track every opportunity from discovery to award</div>
+    </div>
+    <button class="btn btn-primary" onclick="openAddOpp()">+ Add Opportunity</button>
+  </div>
+
+  <div class="metrics-row">
+    <div class="metric-card blue">
+      <div class="metric-label">Active Pursuits</div>
+      <div class="metric-value" id="p-active">0</div>
+      <div class="metric-sub">In pipeline</div>
+    </div>
+    <div class="metric-card gold">
+      <div class="metric-label">Total Pipeline Value</div>
+      <div class="metric-value" id="p-value">$0</div>
+      <div class="metric-sub">Estimated</div>
+    </div>
+    <div class="metric-card green">
+      <div class="metric-label">Submitted</div>
+      <div class="metric-value" id="p-submitted">0</div>
+      <div class="metric-sub">Awaiting award</div>
+    </div>
+    <div class="metric-card orange">
+      <div class="metric-label">Won</div>
+      <div class="metric-value" id="p-won">0</div>
+      <div class="metric-sub">This year</div>
+    </div>
+  </div>
+
+  <div class="pipeline" id="pipelineBoard"></div>
+</div>
+
+<!-- ══════════════════════════════════════ SUBS ══════════════════════════════════════ -->
+<div id="tab-subs" class="section">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:2px; color:var(--text);">SUB INTELLIGENCE</div>
+      <div style="font-size:13px; color:var(--text2);">Identify, vet, and manage your subcontractor network</div>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-primary" onclick="generateSubOutreach()">🤖 Generate Outreach</button>
+      <button class="btn btn-ghost" onclick="openAddSub()">+ Add Sub</button>
+    </div>
+  </div>
+
+  <div class="two-col" style="margin-bottom:24px;">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">🎯 IDEAL SUB PROFILE</div>
+      </div>
+      <div class="panel-body">
+        <div class="check-list" id="subCriteria"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">🤖 AI SUB FINDER</div>
+      </div>
+      <div class="panel-body">
+        <div class="card-desc" style="margin-bottom:12px;">Describe the capability you need and get a targeted sub search strategy.</div>
+        <div class="field-group">
+          <label>What capability do you need?</label>
+          <input type="text" id="subNeed" placeholder="e.g., Home oxygen DME delivery, VISN 7 VA region">
+        </div>
+        <div class="field-group">
+          <label>Contract Value Range</label>
+          <input type="text" id="subContractValue" placeholder="e.g., $500K–$2M">
+        </div>
+        <button class="btn btn-primary" style="width:100%;" onclick="aiSubSearch()">🔍 Find Sub Strategy</button>
+        <div id="subSearchResult" class="ai-output" style="margin-top:12px; display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">📋 SUB NETWORK DATABASE</div>
+    </div>
+    <div class="panel-body">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Company</th>
+            <th>Capability</th>
+            <th>SDVOSB?</th>
+            <th>Status</th>
+            <th>Contract Value</th>
+            <th>Margin %</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="subTable">
+          <tr>
+            <td colspan="7">
+              <div class="empty-state" style="padding:24px;">
+                <div class="empty-icon">🤝</div>
+                <div class="empty-title">No subs added yet</div>
+                <div class="empty-desc">Add your first subcontractor or use AI Sub Finder to identify candidates.</div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ CO OUTREACH ══════════════════════════════════════ -->
+<div id="tab-co" class="section">
+  <div style="font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:2px; color:var(--text); margin-bottom:4px;">CO OUTREACH</div>
+  <div style="font-size:13px; color:var(--text2); margin-bottom:24px;">Build relationships with Contracting Officers before opportunities post</div>
+
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">📧 EMAIL GENERATOR</div>
+      </div>
+      <div class="panel-body">
+        <div class="field-group">
+          <label>Email Type</label>
+          <select id="coEmailType">
+            <option value="intro">Initial Introduction</option>
+            <option value="presol">Pre-Solicitation Follow-Up</option>
+            <option value="sources">Sources Sought Follow-Up</option>
+            <option value="capability">Capability Statement Delivery</option>
+            <option value="award_followup">Post-Award Relationship</option>
+            <option value="sole_source">Sole-Source Positioning</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>CO Name</label>
+          <input type="text" id="coName" placeholder="e.g., Leonard Robinson">
+        </div>
+        <div class="field-group">
+          <label>CO Email</label>
+          <input type="text" id="coEmail" placeholder="e.g., leonard.robinson@va.gov">
+        </div>
+        <div class="field-group">
+          <label>Agency / Office</label>
+          <input type="text" id="coAgency" placeholder="e.g., VISN 7 Network Contracting Office">
+        </div>
+        <div class="field-group">
+          <label>Relevant Opportunity or Context</label>
+          <textarea id="coContext" rows="3" placeholder="e.g., I noticed your recent award for home oxygen services (36C24726D0017) and wanted to introduce my SDVOSB..."></textarea>
+        </div>
+        <button class="btn btn-primary" style="width:100%;" onclick="generateCOEmail()">🤖 Generate Email</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">✉ GENERATED EMAIL</div>
+        <button class="btn btn-ghost" onclick="copyCOEmail()" style="font-size:10px; padding:4px 10px;">COPY</button>
+      </div>
+      <div class="panel-body">
+        <div id="coEmailOutput" class="ai-output">
+          <div style="color:var(--text3);">Your personalized CO email will appear here.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;" class="panel">
+    <div class="panel-header">
+      <div class="panel-title">📒 CO DATABASE</div>
+      <button class="btn btn-ghost" style="font-size:10px; padding:4px 10px;" onclick="openAddCO()">+ Add CO</button>
+    </div>
+    <div class="panel-body">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Agency</th>
+            <th>Email</th>
+            <th>Last Contact</th>
+            <th>Relationship</th>
+            <th>Notes</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="coTable">
+          <tr>
+            <td colspan="7">
+              <div class="empty-state" style="padding:24px;">
+                <div class="empty-icon">📞</div>
+                <div class="empty-title">No COs tracked yet</div>
+                <div class="empty-desc">Add COs from your target agencies and pre-populate from known contacts.</div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ RECOMPETE ══════════════════════════════════════ -->
+<div id="tab-recompete" class="section">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:2px; color:var(--text);">RECOMPETE INTELLIGENCE</div>
+      <div style="font-size:13px; color:var(--text2);">Track expiring contracts and position for recompetes 6–12 months out</div>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-primary" onclick="runRecompeteScan()">⚡ Scan USASpending</button>
+      <button class="btn btn-ghost" onclick="openAddRecompete()">+ Add Manual</button>
+    </div>
+  </div>
+
+  <div class="alert alert-info">
+    💡 <strong>Pro tip:</strong> Contracts expiring 90–180 days out are your sweet spot. The CO is already thinking about the recompete. That's when to call, not when the RFP posts.
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">🔄 EXPIRING CONTRACT TRACKER</div>
+    </div>
+    <div class="panel-body">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Contract #</th>
+            <th>Agency</th>
+            <th>Incumbent</th>
+            <th>Value</th>
+            <th>Expires</th>
+            <th>Days Left</th>
+            <th>Priority</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="recompeteTable">
+          <tr>
+            <td colspan="8">
+              <div class="empty-state" style="padding:24px;">
+                <div class="empty-icon">🔄</div>
+                <div class="empty-title">No recompetes tracked yet</div>
+                <div class="empty-desc">Scan USASpending.gov or manually add contracts you're tracking.</div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ BRIEFING ══════════════════════════════════════ -->
+<div id="tab-briefing" class="section">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:2px; color:var(--text);">MORNING BRIEFING</div>
+      <div style="font-size:13px; color:var(--text2);">Your daily AI intelligence digest — know exactly what to do in the next 2 hours</div>
+    </div>
+    <button class="btn btn-primary" onclick="generateBriefing()">☀ Generate Today's Briefing</button>
+  </div>
+
+  <div id="briefingContent">
+    <div class="empty-state">
+      <div class="empty-icon">☀</div>
+      <div class="empty-title">No briefing generated yet</div>
+      <div class="empty-desc">Click "Generate Today's Briefing" for your personalized daily action plan.<br>Best used after running the scanner and updating your pipeline.</div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- ══════════════════ MODALS ══════════════════ -->
+
+<!-- Add Opportunity -->
+<div class="modal-overlay" id="modalAddOpp">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Opportunity to Pipeline</div>
+      <div class="modal-close" onclick="closeModal('modalAddOpp')">×</div>
+    </div>
+    <div class="modal-body">
+      <div class="field-group"><label>Opportunity Title</label><input type="text" id="newOppTitle" placeholder="SAM.gov opportunity title"></div>
+      <div class="two-col">
+        <div class="field-group"><label>Agency</label><input type="text" id="newOppAgency"></div>
+        <div class="field-group"><label>NAICS</label><input type="text" id="newOppNaics"></div>
+      </div>
+      <div class="two-col">
+        <div class="field-group"><label>Estimated Value</label><input type="text" id="newOppValue" placeholder="$500,000"></div>
+        <div class="field-group"><label>Deadline</label><input type="date" id="newOppDeadline"></div>
+      </div>
+      <div class="field-group"><label>Solicitation Number</label><input type="text" id="newOppSol" placeholder="e.g., 36C24726D0017"></div>
+      <div class="field-group">
+        <label>Stage</label>
+        <select id="newOppStage">
+          <option value="tracking">Tracking</option>
+          <option value="qualifying">Qualifying</option>
+          <option value="responding">Responding</option>
+          <option value="submitted">Submitted</option>
+          <option value="won">Won</option>
+          <option value="lost">Lost</option>
+        </select>
+      </div>
+      <div class="field-group"><label>Notes</label><textarea id="newOppNotes" rows="3"></textarea></div>
+      <button class="btn btn-success" style="width:100%;" onclick="saveOpp()">✓ Add to Pipeline</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Sub -->
+<div class="modal-overlay" id="modalAddSub">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Subcontractor</div>
+      <div class="modal-close" onclick="closeModal('modalAddSub')">×</div>
+    </div>
+    <div class="modal-body">
+      <div class="field-group"><label>Company Name</label><input type="text" id="newSubName"></div>
+      <div class="two-col">
+        <div class="field-group"><label>SDVOSB Certified?</label><select id="newSubSDV"><option value="yes">Yes</option><option value="no">No</option><option value="unknown">Unknown</option></select></div>
+        <div class="field-group"><label>SAM.gov Active?</label><select id="newSubSAM"><option value="yes">Yes</option><option value="no">No</option></select></div>
+      </div>
+      <div class="field-group"><label>Core Capability</label><input type="text" id="newSubCap" placeholder="e.g., DME equipment delivery, VA region"></div>
+      <div class="two-col">
+        <div class="field-group"><label>Contact Name</label><input type="text" id="newSubContact"></div>
+        <div class="field-group"><label>Contact Email</label><input type="text" id="newSubEmail"></div>
+      </div>
+      <div class="two-col">
+        <div class="field-group"><label>Their Rate (you pay them)</label><input type="text" id="newSubRate" placeholder="e.g., 80% of contract"></div>
+        <div class="field-group"><label>Status</label><select id="newSubStatus"><option value="prospecting">Prospecting</option><option value="vetted">Vetted</option><option value="teaming">Teaming Agreement Signed</option><option value="active">Active</option></select></div>
+      </div>
+      <div class="field-group"><label>Notes / Intel</label><textarea id="newSubNotes" rows="3"></textarea></div>
+      <button class="btn btn-success" style="width:100%;" onclick="saveSub()">✓ Add Subcontractor</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add CO -->
+<div class="modal-overlay" id="modalAddCO">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Contracting Officer</div>
+      <div class="modal-close" onclick="closeModal('modalAddCO')">×</div>
+    </div>
+    <div class="modal-body">
+      <div class="two-col">
+        <div class="field-group"><label>Name</label><input type="text" id="newCOName"></div>
+        <div class="field-group"><label>Title</label><input type="text" id="newCOTitle" placeholder="Contracting Officer"></div>
+      </div>
+      <div class="two-col">
+        <div class="field-group"><label>Agency</label><input type="text" id="newCOAgency"></div>
+        <div class="field-group"><label>Office</label><input type="text" id="newCOOffice"></div>
+      </div>
+      <div class="two-col">
+        <div class="field-group"><label>Email</label><input type="text" id="newCOEmail"></div>
+        <div class="field-group"><label>Phone</label><input type="text" id="newCOPhone"></div>
+      </div>
+      <div class="field-group">
+        <label>Relationship Status</label>
+        <select id="newCORel">
+          <option value="cold">Cold — Never contacted</option>
+          <option value="warm">Warm — Emailed/called once</option>
+          <option value="active">Active — Regular communication</option>
+          <option value="strong">Strong — Trusted relationship</option>
+        </select>
+      </div>
+      <div class="field-group"><label>Notes</label><textarea id="newCONotes" rows="3"></textarea></div>
+      <button class="btn btn-success" style="width:100%;" onclick="saveCO()">✓ Add CO</button>
+    </div>
+  </div>
+</div>
+
+<!-- Opportunity Detail Modal -->
+<div class="modal-overlay" id="modalOppDetail">
+  <div class="modal" style="max-width:780px;">
+    <div class="modal-header">
+      <div class="modal-title" id="detailTitle">Opportunity Detail</div>
+      <div class="modal-close" onclick="closeModal('modalOppDetail')">×</div>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let state = {
+  profile: {},
+  keys: {},
+  opportunities: [],
+  pipeline: [],
+  subs: [],
+  cos: [],
+  recompetes: [],
+  lastScan: null
+};
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+window.onload = () => {
+  loadState();
+  populateNAICS();
+  populateAgencies();
+  populateSubCriteria();
+  renderPipeline();
+  renderSubTable();
+  renderCOTable();
+  renderRecompeteTable();
+  renderGaps();
+  updateClock();
+  setInterval(updateClock, 1000);
+  checkKeys();
+
+  // Hide loading
+  setTimeout(() => {
+    document.getElementById('loading-screen').classList.add('hidden');
+  }, 1800);
+};
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('currentTime').textContent =
+    now.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}) + ' ' +
+    now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STATE PERSISTENCE
+// ═══════════════════════════════════════════════════════════════
+function saveProfile() {
+  state.profile = {
+    companyName: v('companyName'),
+    uei: v('companyUEI'),
+    cage: v('companyCage'),
+    cert: v('companyCert'),
+    poc: v('companyPOC'),
+    contact: v('companyContact'),
+    address: v('companyAddress'),
+    capability: v('coreCapability'),
+    pastPerf: v('pastPerf'),
+    minValue: v('minValue'),
+    maxValue: v('maxValue'),
+    feePercent: v('feePercent'),
+    minFee: v('minFee'),
+    geoFocus: v('geoFocus'),
+    naics: getSelectedNAICS(),
+    agencies: getSelectedAgencies()
+  };
+  try { localStorage.setItem('apexProfile', JSON.stringify(state.profile)); } catch(e) {}
+}
+
+function saveKeys() {
+  state.keys = { claude: v('claudeKey'), sam: v('samKey') };
+  try { localStorage.setItem('apexKeys', JSON.stringify(state.keys)); } catch(e) {}
+}
+
+function loadState() {
+  try {
+    const p = localStorage.getItem('apexProfile');
+    const k = localStorage.getItem('apexKeys');
+    const pipeline = localStorage.getItem('apexPipeline');
+    const subs = localStorage.getItem('apexSubs');
+    const cos = localStorage.getItem('apexCOs');
+    const recompetes = localStorage.getItem('apexRecompetes');
+    const opps = localStorage.getItem('apexOpps');
+
+    if (p) { state.profile = JSON.parse(p); populateFromProfile(); }
+    if (k) { state.keys = JSON.parse(k); populateKeys(); }
+    if (pipeline) state.pipeline = JSON.parse(pipeline);
+    if (subs) state.subs = JSON.parse(subs);
+    if (cos) state.cos = JSON.parse(cos);
+    if (recompetes) state.recompetes = JSON.parse(recompetes);
+    if (opps) state.opportunities = JSON.parse(opps);
+  } catch(e) {}
+}
+
+function saveData() {
+  try {
+    localStorage.setItem('apexPipeline', JSON.stringify(state.pipeline));
+    localStorage.setItem('apexSubs', JSON.stringify(state.subs));
+    localStorage.setItem('apexCOs', JSON.stringify(state.cos));
+    localStorage.setItem('apexRecompetes', JSON.stringify(state.recompetes));
+    localStorage.setItem('apexOpps', JSON.stringify(state.opportunities));
+  } catch(e) {}
+}
+
+function populateFromProfile() {
+  const p = state.profile;
+  setV('companyName', p.companyName); setV('companyUEI', p.uei);
+  setV('companyCage', p.cage); setV('companyCert', p.cert);
+  setV('companyPOC', p.poc); setV('companyContact', p.contact);
+  setV('companyAddress', p.address); setV('coreCapability', p.capability);
+  setV('pastPerf', p.pastPerf); setV('minValue', p.minValue || 100000);
+  setV('maxValue', p.maxValue || 4000000); setV('feePercent', p.feePercent || 20);
+  setV('minFee', p.minFee || 12); setV('geoFocus', p.geoFocus || 'national');
+}
+
+function populateKeys() {
+  if (state.keys.claude) setV('claudeKey', state.keys.claude);
+  if (state.keys.sam) setV('samKey', state.keys.sam);
+}
+
+function v(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+function setV(id, val) { const el = document.getElementById(id); if (el && val) el.value = val; }
+
+// ═══════════════════════════════════════════════════════════════
+// NAICS + AGENCIES
+// ═══════════════════════════════════════════════════════════════
+const NAICS_LIST = [
+  {code:'541512', label:'Computer Systems Design'},
+  {code:'541511', label:'Custom Software Dev'},
+  {code:'541519', label:'Other Computer Services'},
+  {code:'541690', label:'Other Scientific Consulting'},
+  {code:'561320', label:'Temporary Staffing'},
+  {code:'541611', label:'Mgmt Consulting'},
+  {code:'541618', label:'Other Mgmt Consulting'},
+  {code:'611430', label:'Professional Training'},
+  {code:'621512', label:'Diagnostic Imaging Centers'},
+  {code:'532283', label:'Home Health Equipment Rental'},
+  {code:'532490', label:'Other Commercial Equipment Rental'},
+  {code:'621610', label:'Home Health Care Services'},
+  {code:'621111', label:'Offices of Physicians'},
+  {code:'339113', label:'Surgical & Medical Instruments'},
+  {code:'561210', label:'Facilities Support Services'},
+  {code:'561720', label:'Janitorial Services'},
+  {code:'236220', label:'Commercial Building Construction'},
+  {code:'541330', label:'Engineering Services'},
+  {code:'488510', label:'Freight Transportation Arrangement'},
+  {code:'541614', label:'Process & Physical Distribution Consulting'},
+  {code:'518210', label:'Data Processing & Hosting'},
+  {code:'541715', label:'R&D in Physical/Engineering Sciences'},
+  {code:'561621', label:'Security Systems Services'},
+  {code:'423450', label:'Medical Equipment Wholesale'},
+];
+
+const AGENCY_LIST = [
+  {id:'va', label:'VA — Dept of Veterans Affairs', desc:'$5.2B SDVOSB spend, Veterans First mandate', priority:'CRITICAL'},
+  {id:'dod', label:'DoD — Department of Defense', desc:'$12.8B volume, multiple branches', priority:'HIGH'},
+  {id:'nasa', label:'NASA', desc:'Chronically below goal — EXTREME pressure', priority:'CRITICAL'},
+  {id:'doe', label:'DOE — Dept of Energy', desc:'Inconsistent goal attainment — HIGH pressure', priority:'HIGH'},
+  {id:'dot', label:'DOT — Dept of Transportation', desc:'Below goal most years', priority:'HIGH'},
+  {id:'dhs', label:'DHS — Homeland Security', desc:'IT/Cyber focus, $2.1B SDVOSB', priority:'MEDIUM'},
+  {id:'hhs', label:'HHS — Health & Human Services', desc:'Healthcare NAICS, $1.4B SDVOSB', priority:'MEDIUM'},
+  {id:'usda', label:'USDA — Agriculture', desc:'Rural limits pool, high goal pressure', priority:'MEDIUM'},
+  {id:'interior', label:'Dept of Interior / IHS', desc:'IHS healthcare connections, remote locations', priority:'MEDIUM'},
+];
+
+function populateNAICS() {
+  const cloud = document.getElementById('naicsCloud');
+  if (!cloud) return;
+  cloud.innerHTML = NAICS_LIST.map(n =>
+    `<div class="naics-tag ${(state.profile.naics||[]).includes(n.code)?'selected':''}"
+      onclick="toggleNAICS(this,'${n.code}')">${n.code} — ${n.label}</div>`
+  ).join('');
+}
+
+function toggleNAICS(el, code) {
+  el.classList.toggle('selected');
+  saveProfile();
+}
+
+function getSelectedNAICS() {
+  return [...document.querySelectorAll('.naics-tag.selected')].map(el => el.textContent.split(' — ')[0]);
+}
+
+function populateAgencies() {
+  const list = document.getElementById('agencyList');
+  if (!list) return;
+  list.innerHTML = AGENCY_LIST.map(a => `
+    <div class="check-item ${(state.profile.agencies||[]).includes(a.id)?'checked':''}"
+      onclick="toggleAgency(this,'${a.id}')">
+      <input type="checkbox" ${(state.profile.agencies||[]).includes(a.id)?'checked':''}>
+      <div>
+        <div class="check-label">${a.label} <span class="badge ${a.priority==='CRITICAL'?'badge-red':a.priority==='HIGH'?'badge-orange':'badge-gold'}" style="margin-left:6px;">${a.priority}</span></div>
+        <div class="check-sub">${a.desc}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleAgency(el, id) {
+  el.classList.toggle('checked');
+  el.querySelector('input').checked = el.classList.contains('checked');
+  saveProfile();
+}
+
+function getSelectedAgencies() {
+  return [...document.querySelectorAll('#agencyList .check-item.checked')].map(el => {
+    const label = el.querySelector('.check-label').textContent;
+    return AGENCY_LIST.find(a => label.includes(a.label.split('—')[0].trim()))?.id || '';
+  }).filter(Boolean);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SUB CRITERIA
+// ═══════════════════════════════════════════════════════════════
+const SUB_CRITERIA = [
+  'VetCert SDVOSB certified (active)',
+  'SAM.gov registration active',
+  'Zero or minimal prime contract history',
+  'No active BD function / not pursuing GSA schedule',
+  'Non-veteran ownership preferred (cannot self-certify)',
+  'Operator mindset — wants to do work, not paperwork',
+  'Financial stability — can float 30-45 days payroll',
+  'Willing to sign exclusivity agreement',
+  'No existing contracts with your target agencies (no conflict)',
+  'Key personnel hold required certifications/licenses',
+];
+
+function populateSubCriteria() {
+  const list = document.getElementById('subCriteria');
+  if (!list) return;
+  list.innerHTML = SUB_CRITERIA.map((c, i) => `
+    <div class="check-item" onclick="this.classList.toggle('checked'); this.querySelector('input').checked = this.classList.contains('checked');">
+      <input type="checkbox">
+      <div class="check-label">${c}</div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════════
+function showTab(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// KEY CHECK
+// ═══════════════════════════════════════════════════════════════
+function checkKeys() {
+  const hasClaude = v('claudeKey').length > 20;
+  const hasSAM = v('samKey').length > 10;
+  const statusEl = document.getElementById('apiStatus');
+  if (hasClaude && hasSAM) {
+    statusEl.textContent = '● API: READY';
+    statusEl.style.color = 'var(--accent2)';
+  } else if (hasClaude) {
+    statusEl.textContent = '● API: CLAUDE ONLY';
+    statusEl.style.color = 'var(--gold)';
+  } else {
+    statusEl.textContent = '● API: NOT CONFIGURED';
+    statusEl.style.color = 'var(--text3)';
+  }
+}
+
+async function testKeys() {
+  const result = document.getElementById('keyTestResult');
+  result.textContent = 'Testing...';
+  const claudeKey = v('claudeKey');
+  if (!claudeKey) { result.textContent = '✗ No Claude key entered'; return; }
+  try {
+    const res = await callClaude('Say "APEX ONLINE" and nothing else.', 50);
+    if (res.includes('APEX') || res.includes('online') || res.length > 0) {
+      result.textContent = '✓ Claude API connected';
+      result.style.color = 'var(--accent2)';
+      showToast('Claude API connected successfully!', 'success');
+    }
+  } catch(e) {
+    result.textContent = '✗ Connection failed — check key';
+    result.style.color = 'var(--red)';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CLAUDE API
+// ═══════════════════════════════════════════════════════════════
+async function callClaude(prompt, maxTokens = 1800, systemPrompt = null) {
+  const key = v('claudeKey') || state.keys.claude;
+  if (!key) throw new Error('No Claude API key configured. Go to Setup tab.');
+
+  const profile = state.profile;
+  const defaultSystem = `You are an expert federal government contracting strategist and proposal writer specializing in SDVOSB (Service-Disabled Veteran-Owned Small Business) contracts. You help operators win federal contracts using the Apex Middleman model.
+
+COMPANY PROFILE:
+Company: ${profile.companyName || '[Company Name]'}
+UEI: ${profile.uei || '[UEI]'}
+CAGE: ${profile.cage || '[CAGE]'}
+VetCert #: ${profile.cert || '[Cert #]'}
+POC: ${profile.poc || '[POC]'}
+Contact: ${profile.contact || '[Contact]'}
+Location: ${profile.address || 'Atlanta, GA'}
+Capability: ${profile.capability || 'Federal contractor providing healthcare equipment, IT staffing, and facilities management services.'}
+Past Performance: ${profile.pastPerf || 'Key personnel with extensive federal contracting backgrounds.'}
+
+Always write in professional federal contracting language. Emphasize SDVOSB certification prominently. Keep responses focused and immediately actionable.`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: maxTokens,
+      system: systemPrompt || defaultSystem,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.content?.[0]?.text || '';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SAM.GOV SCANNER
+// ═══════════════════════════════════════════════════════════════
+async function runScanner() {
+  const samKey = v('samKey') || state.keys.sam;
+  if (!samKey) {
+    showToast('SAM.gov API key required. Add it in Setup tab.', 'error');
+    return;
+  }
+
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = '⏳ Scanning...';
+
+  document.getElementById('oppList').innerHTML = `
+    <div style="text-align:center; padding:48px;">
+      <div class="ai-spinner" style="justify-content:center; margin-bottom:12px;">
+        <span></span><span></span><span></span>
+      </div>
+      <div style="color:var(--text2); font-size:13px;">Scanning SAM.gov for opportunities...</div>
+    </div>`;
+
+  try {
+    const today = new Date();
+    const pastDate = new Date(today - 14 * 24 * 60 * 60 * 1000);
+    const fmt = d => `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}/${d.getFullYear()}`;
+    const from = fmt(pastDate), to = fmt(today);
+
+    const typeFilter = v('filterType');
+    const naics = getSelectedNAICS();
+    const naicsParam = naics.length > 0 ? naics.slice(0, 3).join(',') : '541512';
+
+    const ptypes = typeFilter ? [typeFilter] : ['r', 'p', 'o', 'k'];
+    let allOpps = [];
+
+    for (const ptype of ptypes) {
+      const params = new URLSearchParams({
+        api_key: samKey, limit: 25, postedFrom: from, postedTo: to,
+        ptype, typeOfSetAside: 'SDVOSBC'
+      });
+
+      try {
+        const url = `https://api.sam.gov/prod/opportunities/v2/search?${params}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.opportunitiesData) allOpps.push(...data.opportunitiesData);
+        }
+      } catch(e) {}
+    }
+
+    // Score and deduplicate
+    const seen = new Set();
+    const scored = allOpps
+      .filter(o => { if (seen.has(o.noticeId)) return false; seen.add(o.noticeId); return true; })
+      .map(o => scoreOpp(o))
+      .sort((a,b) => b.score - a.score);
+
+    state.opportunities = scored;
+    state.lastScan = new Date();
+    saveData();
+
+    updateScannerMetrics(scored);
+    renderOpps(scored);
+    showToast(`Found ${scored.length} opportunities`, 'success');
+
+  } catch(e) {
+    document.getElementById('oppList').innerHTML = `
+      <div class="alert alert-danger">
+        Scanner error: ${e.message}<br><br>
+        <strong>Troubleshooting:</strong><br>
+        1. Verify your SAM.gov API key is correct<br>
+        2. SAM.gov API can take up to 10 business days to activate after requesting<br>
+        3. The key expires every 90 days — check if it needs renewal
+      </div>`;
+    showToast('Scanner error — check Setup tab', 'error');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '⚡ Scan Now';
+}
+
+function scoreOpp(o) {
+  let score = 0;
+  const reasons = [];
+  const now = new Date();
+
+  if ((o.typeOfSetAside||'').includes('SDVOSB')) { score += 35; reasons.push('SDVOSB set-aside'); }
+
+  const deadline = o.responseDeadLine ? new Date(o.responseDeadLine) : null;
+  const daysLeft = deadline ? Math.ceil((deadline - now) / 86400000) : 999;
+  if (daysLeft <= 7 && daysLeft > 0) { score += 25; reasons.push(`${daysLeft}d left — short window`); }
+  else if (daysLeft <= 14) { score += 15; reasons.push(`${daysLeft}d left`); }
+  else if (daysLeft <= 30) { score += 5; }
+
+  const remoteStates = ['AK','HI','PR','GU','VI','MT','WY','ND','SD','ID','VT','NM','AR'];
+  const state_code = o.placeOfPerformance?.state?.code || '';
+  if (remoteStates.includes(state_code)) { score += 20; reasons.push('Remote location'); }
+
+  const agency = (o.fullParentPathName||'').toUpperCase();
+  const desperateAgencies = {'NASA':20,'ENERGY':18,'TRANSPORTATION':15,'AGRICULTURE':12};
+  for (const [a, pts] of Object.entries(desperateAgencies)) {
+    if (agency.includes(a)) { score += pts; reasons.push(`${a} — behind on goals`); break; }
+  }
+
+  const ptype = o.type || '';
+  const noticeLabels = {
+    'Sources Sought': 'SOURCES SOUGHT', 'Pre-Solicitation': 'PRE-SOL',
+    'Solicitation': 'SOLICITATION', 'Combined Synopsis/Solicitation': 'COMBINED',
+    'Award Notice': 'AWARD', 'Justification and Authorization': 'J&A'
+  };
+
+  return {
+    ...o, score,
+    reasons,
+    daysLeft,
+    priority: score >= 70 ? 'IMMEDIATE' : score >= 50 ? 'HIGH' : score >= 30 ? 'MEDIUM' : 'LOW',
+    noticeLabel: noticeLabels[ptype] || ptype
+  };
+}
+
+function updateScannerMetrics(opps) {
+  document.getElementById('m-total').textContent = opps.length;
+  document.getElementById('m-sdvosb').textContent = opps.filter(o => (o.typeOfSetAside||'').includes('SDVOSB')).length;
+  document.getElementById('m-immediate').textContent = opps.filter(o => o.priority === 'IMMEDIATE').length;
+
+  // Estimate pipeline value
+  let totalVal = 0;
+  opps.forEach(o => {
+    const val = extractValue(o);
+    if (val) totalVal += val;
+  });
+  document.getElementById('m-value').textContent = totalVal > 0 ? '$' + (totalVal/1000000).toFixed(1) + 'M' : '—';
+  document.getElementById('oppCount').textContent = `(${opps.length})`;
+}
+
+function extractValue(o) {
+  const desc = (o.description || o.title || '').toLowerCase();
+  const match = desc.match(/\$[\d,]+/);
+  if (match) return parseInt(match[0].replace(/[$,]/g, '')) || 0;
+  return 500000; // default estimate
+}
+
+function renderOpps(opps) {
+  const pFilter = v('filterPriority');
+  const sFilter = v('oppSearch').toLowerCase();
+  const filtered = opps.filter(o =>
+    (!pFilter || o.priority === pFilter) &&
+    (!sFilter || (o.title||'').toLowerCase().includes(sFilter) || (o.fullParentPathName||'').toLowerCase().includes(sFilter))
+  );
+
+  if (filtered.length === 0) {
+    document.getElementById('oppList').innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No opportunities match your filters</div></div>`;
+    return;
+  }
+
+  const badgeClass = {IMMEDIATE:'badge-red', HIGH:'badge-orange', MEDIUM:'badge-gold', LOW:'badge-gray'};
+
+  document.getElementById('oppList').innerHTML = `<div class="opp-list">` +
+    filtered.map(o => `
+      <div class="opp-item priority-${o.priority}" onclick="showOppDetail('${o.noticeId}')">
+        <div class="opp-top">
+          <div class="opp-title">${o.title || 'Untitled'}</div>
+          <div style="display:flex; gap:4px; flex-shrink:0;">
+            <span class="badge ${badgeClass[o.priority]}">${o.priority}</span>
+            <span class="badge badge-blue">${o.noticeLabel}</span>
+          </div>
+        </div>
+        <div class="opp-meta">
+          <span class="opp-meta-item">🏛 ${(o.fullParentPathName||'').split('.')[0]}</span>
+          ${o.daysLeft < 999 ? `<span class="opp-meta-item">⏰ ${o.daysLeft}d left</span>` : ''}
+          <span class="opp-meta-item">📋 ${o.naicsCode || '—'}</span>
+          ${o.placeOfPerformance?.state?.code ? `<span class="opp-meta-item">📍 ${o.placeOfPerformance.state.code}</span>` : ''}
+          <span class="opp-meta-item">⚡ Score: ${o.score}</span>
+        </div>
+        <div class="score-bar">
+          <div class="score-fill" style="width:${Math.min(o.score,100)}%; background:${o.priority==='IMMEDIATE'?'var(--red)':o.priority==='HIGH'?'var(--accent3)':o.priority==='MEDIUM'?'var(--gold)':'var(--text3)'}"></div>
+        </div>
+        ${o.reasons.length ? `<div style="margin-top:6px; display:flex; gap:4px; flex-wrap:wrap;">${o.reasons.map(r=>`<span class="badge badge-gray">${r}</span>`).join('')}</div>` : ''}
+      </div>
+    `).join('') + `</div>`;
+}
+
+function filterOpps() { renderOpps(state.opportunities); }
+
+function showOppDetail(noticeId) {
+  const o = state.opportunities.find(x => x.noticeId === noticeId);
+  if (!o) return;
+  document.getElementById('detailTitle').textContent = o.title || 'Opportunity Detail';
+  document.getElementById('detailBody').innerHTML = `
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
+      <span class="badge badge-${o.priority==='IMMEDIATE'?'red':o.priority==='HIGH'?'orange':'gold'}">${o.priority}</span>
+      <span class="badge badge-blue">${o.noticeLabel}</span>
+      ${(o.typeOfSetAside||'').includes('SDVOSB') ? '<span class="badge badge-green">SDVOSB SET-ASIDE</span>' : ''}
+    </div>
+    <table class="data-table" style="margin-bottom:16px;">
+      <tr><td class="td-primary" style="width:140px;">Solicitation #</td><td>${o.solicitationNumber||'—'}</td></tr>
+      <tr><td class="td-primary">Agency</td><td>${o.fullParentPathName||'—'}</td></tr>
+      <tr><td class="td-primary">NAICS</td><td>${o.naicsCode||'—'}</td></tr>
+      <tr><td class="td-primary">Deadline</td><td>${o.responseDeadLine||'—'} ${o.daysLeft<999?`(${o.daysLeft} days)`:''}</td></tr>
+      <tr><td class="td-primary">Posted</td><td>${o.postedDate||'—'}</td></tr>
+      <tr><td class="td-primary">Location</td><td>${o.placeOfPerformance?.city?.name||''} ${o.placeOfPerformance?.state?.code||'—'}</td></tr>
+      <tr><td class="td-primary">Win Score</td><td>${o.score}/100</td></tr>
+    </table>
+    ${o.pointOfContact ? `<div class="alert alert-info" style="margin-bottom:16px;">📞 <strong>Contact:</strong> ${Array.isArray(o.pointOfContact)?o.pointOfContact.map(p=>`${p.fullName||''} ${p.email||''}`).join(' | '):''}</div>` : ''}
+    <div class="divider"></div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="quickDraft('${noticeId}'); closeModal('modalOppDetail');">🤖 Generate Response</button>
+      <button class="btn btn-success" onclick="addOppToPipeline('${noticeId}'); closeModal('modalOppDetail');">+ Add to Pipeline</button>
+      <a href="https://sam.gov/opp/${noticeId}" target="_blank" class="btn btn-ghost">↗ View on SAM.gov</a>
+    </div>
+  `;
+  openModal('modalOppDetail');
+}
+
+function quickDraft(noticeId) {
+  const o = state.opportunities.find(x => x.noticeId === noticeId);
+  if (!o) return;
+  setV('oppDesc', o.title + '\n\n' + (o.description||''));
+  setV('draftAgency', (o.fullParentPathName||'').split('.')[0]);
+  setV('draftNaics', o.naicsCode||'');
+  setV('responseType', 'sources_sought');
+  showTab('drafts');
+  document.querySelector('[onclick="showTab(\'drafts\')"]').classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => { if (!t.onclick?.toString().includes('drafts')) t.classList.remove('active'); });
+}
+
+function addOppToPipeline(noticeId) {
+  const o = state.opportunities.find(x => x.noticeId === noticeId);
+  if (!o) return;
+  state.pipeline.push({
+    id: Date.now(), title: o.title, agency: (o.fullParentPathName||'').split('.')[0],
+    naics: o.naicsCode, value: '$' + extractValue(o).toLocaleString(),
+    deadline: o.responseDeadLine, sol: o.solicitationNumber, stage: 'tracking', notes: ''
+  });
+  saveData(); renderPipeline();
+  showToast('Added to pipeline!', 'success');
+}
+
+function exportOpps() {
+  if (!state.opportunities.length) { showToast('No opportunities to export', 'error'); return; }
+  const csv = ['Title,Agency,NAICS,Priority,Score,Deadline,Days Left,Type,Sol #'].concat(
+    state.opportunities.map(o => [
+      `"${(o.title||'').replace(/"/g,'')}"`, `"${(o.fullParentPathName||'').split('.')[0]}"`,
+      o.naicsCode||'', o.priority, o.score, o.responseDeadLine||'', o.daysLeft<999?o.daysLeft:'',
+      `"${o.noticeLabel}"`, o.solicitationNumber||''
+    ].join(','))
+  ).join('\n');
+  dlFile(csv, 'opportunities.csv', 'text/csv');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RESPONSE DRAFTS
+// ═══════════════════════════════════════════════════════════════
+async function generateResponse() {
+  const type = v('responseType');
+  const desc = v('oppDesc');
+  const agency = v('draftAgency');
+  const naics = v('draftNaics');
+  const value = v('draftValue');
+  const deadline = v('draftDeadline');
+
+  if (!desc) { showToast('Please describe the opportunity', 'error'); return; }
+  if (!state.keys.claude && !v('claudeKey')) { showToast('Claude API key required — see Setup tab', 'error'); return; }
+
+  const outputEl = document.getElementById('draftOutput');
+  outputEl.innerHTML = '<div class="loading"><div class="ai-spinner"><span></span><span></span><span></span></div></div>';
+  outputEl.classList.add('loading');
+
+  const prompts = {
+    sources_sought: `Write a complete, professional Sources Sought response for this federal opportunity.
+
+Opportunity: ${desc}
+Agency: ${agency}
+NAICS: ${naics}
+Estimated Value: ${value}
+Deadline: ${deadline}
+
+Write a complete Sources Sought response including:
+1. Header with company info and solicitation reference
+2. Company Capabilities section — specifically addressing the stated requirements
+3. SDVOSB certification confirmation (emphasize this helps CO meet statutory goals)
+4. Past Performance summary (3 brief project references using key personnel framework)
+5. Technical Approach (2-3 paragraphs showing understanding of requirement)
+6. Subcontracting Approach (mention national operator network)
+7. Point of Contact information
+8. Closing statement
+
+Format: Professional letter format, ready to submit. Length: 2-3 pages.`,
+
+    rfq: `Write a complete RFQ quote response for this federal opportunity.
+
+Opportunity: ${desc}
+Agency: ${agency}
+NAICS: ${naics}
+Estimated Value: ${value}
+Deadline: ${deadline}
+
+Write a complete RFQ response including:
+1. Cover letter (1 paragraph, professional)
+2. Technical Capability Confirmation (tailored to requirement)
+3. Price Quote table (use $[PRICE TO BE FILLED] placeholder)
+4. Delivery/Performance Schedule
+5. Key Personnel
+6. SDVOSB certification statement
+7. Terms and conditions acknowledgment
+
+Keep it concise and direct. COs reading RFQs want fast, clear answers.`,
+
+    combined: `Write a complete Combined Synopsis/Solicitation response.
+
+Opportunity: ${desc}
+Agency: ${agency}
+NAICS: ${naics}
+Deadline: ${deadline}
+
+Generate a tight, compelling response under 5 pages:
+1. Capability Confirmation (2 paragraphs — specific to requirement)
+2. Technical Approach and Methodology
+3. Key Personnel Summaries (3 people minimum)
+4. Past Performance (3 relevant references)
+5. SDVOSB Compliance Statement
+6. Price Proposal (placeholder table)
+7. Representations and Certifications confirmation`,
+
+    rfp_intro: `Write an RFP Executive Summary and Technical Approach Volume.
+
+Opportunity: ${desc}
+Agency: ${agency}
+NAICS: ${naics}
+Value: ${value}
+
+Write:
+1. Executive Summary (1 page — compelling, highlights SDVOSB status, national capability, and specific understanding of their requirement)
+2. Technical Approach (3-4 pages):
+   - Deep understanding of their requirement
+   - Specific methodology for delivery
+   - Risk mitigation approach
+   - Quality control plan
+   - Phase-in plan
+3. Win themes to weave throughout:
+   - SDVOSB certification helps CO meet statutory goal
+   - National operator network ensures execution
+   - Prime contractor oversight protects government investment`,
+
+    capability: `Write a one-page capability statement for this opportunity.
+
+Target Agency: ${agency}
+NAICS Focus: ${naics}
+Opportunity Context: ${desc}
+
+Create a compelling, tailored capability statement with:
+- Company Overview (2 sentences)
+- Core Competencies (bullet list, 5-6 items specific to this opportunity)
+- SDVOSB Differentiators
+- Past Performance Highlights (3 brief examples)
+- NAICS Codes (relevant subset)
+- Certifications (SDVOSB, SAM Active, VetCert)
+- Contact Information section`,
+
+    co_intro: `Write a professional CO introduction email.
+
+CO/Agency: ${agency}
+Opportunity Context: ${desc}
+
+Write a brief, professional email (3-4 short paragraphs):
+1. Opening: who you are, your SDVOSB certification
+2. Specific reference to their agency/mission/recent award
+3. Your relevant capability (1-2 sentences, directly relevant)
+4. Soft ask: request to be added to vendor list / discuss upcoming needs
+5. Close with contact info
+
+Keep it under 200 words. COs are busy. Subject line included.`,
+
+    presol: `Write a Pre-Solicitation contact email.
+
+Agency: ${agency}
+Opportunity: ${desc}
+
+Write a strategic pre-solicitation email that:
+1. References the specific pre-solicitation notice
+2. Confirms SDVOSB capability to meet the requirement
+3. Asks ONE key question about the requirement (the most valuable question: what gaps have SDVOSB firms historically struggled with?)
+4. Requests a brief 15-minute call
+5. Positions for RFP submission
+
+Include subject line. Keep under 250 words.`
+  };
+
+  try {
+    const result = await callClaude(prompts[type] || prompts.sources_sought, 2000);
+    outputEl.classList.remove('loading');
+    outputEl.textContent = result;
+    document.getElementById('draftActions').style.display = 'flex';
+    showToast('Response generated!', 'success');
+  } catch(e) {
+    outputEl.classList.remove('loading');
+    outputEl.textContent = 'Error: ' + e.message;
+  }
+}
+
+async function refineDraft(instruction) {
+  const current = document.getElementById('draftOutput').textContent;
+  if (!current || current.length < 50) { showToast('Generate a draft first', 'error'); return; }
+  const outputEl = document.getElementById('draftOutput');
+  outputEl.innerHTML = '<div class="loading"><div class="ai-spinner"><span></span><span></span><span></span></div></div>';
+  outputEl.classList.add('loading');
+  const instructions = {
+    shorter: 'Rewrite this government proposal response to be 30% shorter while keeping all key points. Remove any filler language.',
+    stronger: 'Rewrite this to be more persuasive and compelling. Add stronger win themes around SDVOSB certification helping the CO meet their statutory goal.',
+    formal: 'Rewrite in a more formal, professional government contracting tone. Avoid casual language.'
+  };
+  try {
+    const result = await callClaude(`${instructions[instruction]}\n\nCurrent draft:\n${current}`, 2000);
+    outputEl.classList.remove('loading');
+    outputEl.textContent = result;
+  } catch(e) {
+    outputEl.classList.remove('loading');
+    outputEl.textContent = 'Error: ' + e.message;
+  }
+}
+
+function copyDraft() {
+  const text = document.getElementById('draftOutput').textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!', 'success'));
+}
+
+function copyCOEmail() {
+  const text = document.getElementById('coEmailOutput').textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!', 'success'));
+}
+
+function saveDraftToPipeline() {
+  openAddOpp();
+  setV('newOppTitle', v('oppDesc').substring(0, 80));
+  setV('newOppAgency', v('draftAgency'));
+  setV('newOppNaics', v('draftNaics'));
+  setV('newOppValue', v('draftValue'));
+  setV('newOppDeadline', v('draftDeadline'));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PIPELINE
+// ═══════════════════════════════════════════════════════════════
+const STAGES = [
+  {id:'tracking', label:'Tracking'},
+  {id:'qualifying', label:'Qualifying'},
+  {id:'responding', label:'Responding'},
+  {id:'submitted', label:'Submitted'},
+  {id:'won', label:'Won'},
+  {id:'lost', label:'Lost'},
+];
+
+function renderPipeline() {
+  const board = document.getElementById('pipelineBoard');
+  if (!board) return;
+
+  const stageOpps = {};
+  STAGES.forEach(s => stageOpps[s.id] = []);
+  state.pipeline.forEach(o => (stageOpps[o.stage] || (stageOpps['tracking'])).push(o));
+
+  board.innerHTML = STAGES.map(s => `
+    <div class="pipe-stage">
+      <div class="pipe-header">
+        ${s.label} <span class="pipe-count">${stageOpps[s.id].length}</span>
+      </div>
+      <div class="pipe-items">
+        ${stageOpps[s.id].map(o => `
+          <div class="pipe-card" onclick="openOppEdit(${o.id})">
+            <div style="font-weight:600; color:var(--text); margin-bottom:3px;">${o.title||'Untitled'}</div>
+            <div style="font-size:10px; color:var(--text3);">${o.agency||''}</div>
+            ${o.value ? `<div style="font-size:10px; color:var(--accent2); margin-top:2px;">${o.value}</div>` : ''}
+            ${o.deadline ? `<div style="font-size:10px; color:var(--accent3);">Due: ${o.deadline}</div>` : ''}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  // Update metrics
+  document.getElementById('p-active').textContent = state.pipeline.filter(o => !['won','lost'].includes(o.stage)).length;
+  document.getElementById('p-submitted').textContent = state.pipeline.filter(o => o.stage === 'submitted').length;
+  document.getElementById('p-won').textContent = state.pipeline.filter(o => o.stage === 'won').length;
+
+  let totalVal = 0;
+  state.pipeline.forEach(o => {
+    const num = parseInt((o.value||'').replace(/[$,K]/g,'')) || 0;
+    totalVal += o.value?.includes('K') ? num * 1000 : num;
+  });
+  document.getElementById('p-value').textContent = totalVal > 1000000 ? '$' + (totalVal/1000000).toFixed(1) + 'M' :
+    totalVal > 0 ? '$' + totalVal.toLocaleString() : '$0';
+}
+
+function openAddOpp() { openModal('modalAddOpp'); }
+
+function saveOpp() {
+  const opp = {
+    id: Date.now(),
+    title: v('newOppTitle'), agency: v('newOppAgency'), naics: v('newOppNaics'),
+    value: v('newOppValue'), deadline: v('newOppDeadline'), sol: v('newOppSol'),
+    stage: v('newOppStage'), notes: v('newOppNotes')
+  };
+  state.pipeline.push(opp);
+  saveData(); renderPipeline();
+  closeModal('modalAddOpp');
+  ['newOppTitle','newOppAgency','newOppNaics','newOppValue','newOppDeadline','newOppSol','newOppNotes'].forEach(id => setV(id, ''));
+  showToast('Opportunity added to pipeline!', 'success');
+}
+
+function openOppEdit(id) {
+  const o = state.pipeline.find(x => x.id === id);
+  if (!o) return;
+  document.getElementById('detailTitle').textContent = o.title || 'Edit Opportunity';
+  document.getElementById('detailBody').innerHTML = `
+    <div class="field-group"><label>Stage</label>
+      <select id="editStage">
+        ${STAGES.map(s => `<option value="${s.id}" ${o.stage===s.id?'selected':''}>${s.label}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field-group"><label>Notes</label><textarea id="editNotes" rows="4">${o.notes||''}</textarea></div>
+    <div style="display:flex; gap:8px; margin-top:16px;">
+      <button class="btn btn-success" onclick="updateOpp(${id})">Save Changes</button>
+      <button class="btn btn-danger" onclick="deleteOpp(${id}); closeModal('modalOppDetail');">Delete</button>
+      <button class="btn btn-primary" onclick="quickDraftFromPipeline(${id}); closeModal('modalOppDetail');">🤖 Draft Response</button>
+    </div>
+  `;
+  openModal('modalOppDetail');
+}
+
+function updateOpp(id) {
+  const o = state.pipeline.find(x => x.id === id);
+  if (o) { o.stage = v('editStage'); o.notes = v('editNotes'); }
+  saveData(); renderPipeline(); closeModal('modalOppDetail');
+  showToast('Pipeline updated!', 'success');
+}
+
+function deleteOpp(id) {
+  state.pipeline = state.pipeline.filter(x => x.id !== id);
+  saveData(); renderPipeline();
+}
+
+function quickDraftFromPipeline(id) {
+  const o = state.pipeline.find(x => x.id === id);
+  if (!o) return;
+  setV('oppDesc', o.title); setV('draftAgency', o.agency); setV('draftNaics', o.naics);
+  setV('draftValue', o.value); setV('draftDeadline', o.deadline);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SUBS
+// ═══════════════════════════════════════════════════════════════
+function openAddSub() { openModal('modalAddSub'); }
+
+function saveSub() {
+  const sub = {
+    id: Date.now(), name: v('newSubName'), sdvosb: v('newSubSDV'), sam: v('newSubSAM'),
+    capability: v('newSubCap'), contact: v('newSubContact'), email: v('newSubEmail'),
+    rate: v('newSubRate'), status: v('newSubStatus'), notes: v('newSubNotes')
+  };
+  state.subs.push(sub);
+  saveData(); renderSubTable();
+  closeModal('modalAddSub');
+  showToast('Subcontractor added!', 'success');
+}
+
+function renderSubTable() {
+  const tbody = document.getElementById('subTable');
+  if (!tbody) return;
+  if (!state.subs.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state" style="padding:24px;"><div class="empty-icon">🤝</div><div class="empty-title">No subs added yet</div></div></td></tr>'; return; }
+  const statusColors = {prospecting:'badge-gray', vetted:'badge-blue', 'teaming agreement signed':'badge-gold', active:'badge-green'};
+  tbody.innerHTML = state.subs.map(s => `
+    <tr>
+      <td class="td-primary">${s.name}</td>
+      <td>${s.capability}</td>
+      <td>${s.sdvosb==='yes'?'<span class="badge badge-green">YES</span>':'<span class="badge badge-gray">NO</span>'}</td>
+      <td><span class="badge ${statusColors[s.status]||'badge-gray'}">${s.status}</span></td>
+      <td style="color:var(--text3);">TBD</td>
+      <td style="color:var(--accent2);">${s.rate||'—'}</td>
+      <td>
+        <button class="btn btn-ghost" style="font-size:10px; padding:3px 8px;" onclick="generateSubAgreement(${s.id})">📄 Teaming</button>
+        <button class="btn btn-ghost" style="font-size:10px; padding:3px 8px;" onclick="deleteSub(${s.id})">✕</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function deleteSub(id) { state.subs = state.subs.filter(x => x.id !== id); saveData(); renderSubTable(); }
+
+async function aiSubSearch() {
+  const need = v('subNeed');
+  const contractVal = v('subContractValue');
+  if (!need) { showToast('Describe what capability you need', 'error'); return; }
+  const outputEl = document.getElementById('subSearchResult');
+  outputEl.style.display = 'block';
+  outputEl.innerHTML = '<div class="loading"><div class="ai-spinner"><span></span><span></span><span></span></div></div>';
+  outputEl.classList.add('loading');
+  try {
+    const result = await callClaude(`Generate a detailed sub-contractor identification strategy for:
+
+Capability needed: ${need}
+Contract value range: ${contractVal}
+
+Provide:
+1. EXACT search strategy on VetCert database (what to search for)
+2. EXACT search strategy on FSRS.gov (what filters to use)
+3. EXACT USASpending.gov cross-reference method (identify certified-but-not-priming firms)
+4. Top 5 industry associations to find this type of sub
+5. LinkedIn search strings (exact query strings)
+6. Key red flags to watch for when vetting
+7. Opening message script to send prospective subs (under 100 words)
+
+Be specific and tactical. This person is ready to take action today.`, 1800);
+    outputEl.classList.remove('loading');
+    outputEl.textContent = result;
+  } catch(e) {
+    outputEl.classList.remove('loading');
+    outputEl.textContent = 'Error: ' + e.message;
+  }
+}
+
+async function generateSubAgreement(id) {
+  const sub = state.subs.find(x => x.id === id);
+  if (!sub) return;
+  const outputEl = document.getElementById('subSearchResult');
+  outputEl.style.display = 'block';
+  outputEl.innerHTML = '<div class="loading"><div class="ai-spinner"><span></span><span></span><span></span></div></div>';
+  outputEl.classList.add('loading');
+  showTab('subs');
+  try {
+    const result = await callClaude(`Generate a comprehensive teaming agreement framework for this sub relationship:
+
+Prime: ${state.profile.companyName || 'Prime Company'}
+Sub: ${sub.name}
+Capability: ${sub.capability}
+Rate Structure: Sub receives ${sub.rate || '80%'} of contract value
+
+Generate a teaming agreement outline including:
+1. Non-compete clause (2-3 years, nationwide)
+2. Prime Communication Clause (ALL CO contact through prime)
+3. Exclusivity clause
+4. IP and Intelligence clause (contract intel is prime's property)
+5. Key Personnel clause
+6. Liquidated damages provisions
+7. Information compartmentalization requirements
+8. False Claims Act awareness clause
+9. Term and termination provisions
+
+Format as a professional legal framework. Note which sections need attorney review.`, 2000);
+    outputEl.classList.remove('loading');
+    outputEl.textContent = result;
+  } catch(e) {
+    outputEl.classList.remove('loading');
+    outputEl.textContent = 'Error: ' + e.message;
+  }
+}
+
+async function generateSubOutreach() {
+  const outputEl = document.getElementById('subSearchResult');
+  outputEl.style.display = 'block';
+  outputEl.innerHTML = '<div class="loading"><div class="ai-spinner"><span></span><span></span><span></span></div></div>';
+  outputEl.classList.add('loading');
+  try {
+    const result = await callClaude(`Generate 3 outreach messages for recruiting subcontractors:
+
+Profile: SDVOSB certified-but-not-priming firms, operator mindset, seeking federal work
+
+Write 3 outreach variations:
+1. LinkedIn direct message (under 150 words)
+2. Email outreach (under 200 words, subject line included)
+3. PTAC event follow-up message
+
+Key talking points to use:
+- We handle all the contracting paperwork and CO relationships
+- You focus on executing the work you're already good at
+- We're paying 80-85% of contract value
+- No cost to them to join our network
+- We have active federal contracts and are growing
+
+Tone: Peer-to-peer. Veteran-to-veteran when relevant. Not salesy.`, 1500);
+    outputEl.classList.remove('loading');
+    outputEl.textContent = result;
+  } catch(e) {
+    outputEl.classList.remove('loading');
+    outputEl.textContent = 'Error: ' + e.message;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CO OUTREACH
+// ═══════════════════════════════════════════════════════════════
+function openAddCO() { openModal('modalAddCO'); }
+
+function saveCO() {
+  const co = {
+    id: Date.now(), name: v('newCOName'), title: v('newCOTitle'), agency: v('newCOAgency'),
+    office: v('newCOOffice'), email: v('newCOEmail'), phone: v('newCOPhone'),
+    relationship: v('newCORel'), notes: v('newCONotes'), lastContact: null
+  };
+  state.cos.push(co);
+  saveData(); renderCOTable();
+  closeModal('modalAddCO');
+  showToast('CO added!', 'success');
+}
+
+function renderCOTable() {
+  const tbody = document.getElementById('coTable');
+  if (!tbody) return;
+  if (!state.cos.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state" style="padding:24px;"><div class="empty-icon">📞</div><div class="empty-title">No COs tracked yet</div></div></td></tr>'; return; }
+  const relColors = {cold:'badge-gray', warm:'badge-gold', active:'badge-orange', strong:'badge-green'};
+  tbody.innerHTML = state.cos.map(c => `
+    <tr>
+      <td class="td-primary">${c.name}</td>
+      <td>${c.agency}</td>
+      <td><a href="mailto:${c.email}" style="color:var(--accent);">${c.email}</a></td>
+      <td style="color:var(--text3);">${c.lastContact||'Never'}</td>
+      <td><span class="badge ${relColors[c.relationship]||'badge-gray'}">${c.relationship}</span></td>
+      <td style="font-size:11px; max-width:160px; overflow:hidden; text-overflow:ellipsis;">${c.notes||'—'}</td>
+      <td>
+        <button class="btn btn-ghost" style="font-size:10px; padding:3px 8px;" onclick="prefillCOEmail('${c.id}')">✉ Draft</button>
+        <button class="btn btn-ghost" style="font-size:10px; padding:3px 8px;" onclick="deleteCO(${c.id})">✕</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function deleteCO(id) { state.cos = state.cos.filter(x => x.id !== id); saveData(); renderCOTable(); }
+
+function prefillCOEmail(id) {
+  const co = state.cos.find(x => x.id == id);
+  if (!co) return;
+  setV('coName', co.name); setV('coEmail', co.email); setV('coAgency', co.agency + ' ' + co.office);
+  showTab('co');
+}
+
+async function generateCOEmail() {
+  const type = v('coEmailType');
+  const coName = v('coName');
+  const coAgency = v('coAgency');
+  const context = v('coContext');
+
+  if (!coName || !coAgency) { showToast('CO name and agency required', 'error'); return; }
+  const outputEl = document.getElementById('coEmailOutput');
+  outputEl.innerHTML = '<div class="loading"><div class="ai-spinner"><span></span><span></span><span></span></div></div>';
+  outputEl.classList.add('loading');
+
+  const emailTypes = {
+    intro: 'Write a concise, professional introduction email to a federal Contracting Officer.',
+    presol: 'Write a pre-solicitation follow-up email after seeing a pre-solicitation notice.',
+    sources: 'Write a follow-up email after submitting a Sources Sought response.',
+    capability: 'Write an email delivering a capability statement.',
+    award_followup: 'Write a relationship-building email after a contract was awarded (even if not to us).',
+    sole_source: 'Write an email positioning for a potential sole-source award based on unique SDVOSB capability.'
+  };
+
+  try {
+    const result = await callClaude(`${emailTypes[type]}
+
+CO Name: ${coName}
+Agency/Office: ${coAgency}
+Context: ${context}
+
+Requirements:
+- Include subject line
+- Under 250 words total
+- Professional but not stiff
+- Specific reference to their agency/mission
+- Clear single call to action
+- Sign off with company info
+- Never mention competitors
+- Subtly reference how our SDVOSB status helps them meet their statutory 5% goal
+- Never be pushy — relationship building first`, 1000);
+    outputEl.classList.remove('loading');
+    outputEl.textContent = result;
+
+    // Update last contact date for CO
+    const co = state.cos.find(c => c.name === coName);
+    if (co) { co.lastContact = new Date().toLocaleDateString(); saveData(); renderCOTable(); }
+  } catch(e) {
+    outputEl.classList.remove('loading');
+    outputEl.textContent = 'Error: ' + e.message;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RECOMPETE
+// ═══════════════════════════════════════════════════════════════
+function openAddRecompete() {
+  document.getElementById('detailTitle').textContent = 'Add Recompete to Watch List';
+  document.getElementById('detailBody').innerHTML = `
+    <div class="field-group"><label>Contract Number</label><input type="text" id="newRcNum" placeholder="e.g., 36C24726D0017"></div>
+    <div class="two-col">
+      <div class="field-group"><label>Agency</label><input type="text" id="newRcAgency"></div>
+      <div class="field-group"><label>Incumbent</label><input type="text" id="newRcIncumbent"></div>
+    </div>
+    <div class="two-col">
+      <div class="field-group"><label>Contract Value</label><input type="text" id="newRcValue" placeholder="$500,000"></div>
+      <div class="field-group"><label>Expiration Date</label><input type="date" id="newRcExpiry"></div>
+    </div>
+    <div class="field-group"><label>NAICS</label><input type="text" id="newRcNaics"></div>
+    <div class="field-group"><label>Notes / Intel</label><textarea id="newRcNotes" rows="3"></textarea></div>
+    <button class="btn btn-success" style="width:100%; margin-top:8px;" onclick="saveRecompete()">✓ Add to Watch List</button>
+  `;
+  openModal('modalOppDetail');
+}
+
+function saveRecompete() {
+  const expiry = v('newRcExpiry');
+  const daysLeft = expiry ? Math.ceil((new Date(expiry) - new Date()) / 86400000) : 999;
+  const rc = {
+    id: Date.now(), num: v('newRcNum'), agency: v('newRcAgency'), incumbent: v('newRcIncumbent'),
+    value: v('newRcValue'), expiry, naics: v('newRcNaics'), notes: v('newRcNotes'),
+    daysLeft, priority: daysLeft <= 90 ? 'ACTIVE' : daysLeft <= 180 ? 'WARM' : 'MONITOR'
+  };
+  state.recompetes.push(rc);
+  saveData(); renderRecompeteTable();
+  closeModal('modalOppDetail');
+  showToast('Recompete added!', 'success');
+}
+
+function renderRecompeteTable() {
+  const tbody = document.getElementById('recompeteTable');
+  if (!tbody) return;
+  if (!state.recompetes.length) { tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state" style="padding:24px;"><div class="empty-icon">🔄</div><div class="empty-title">No recompetes tracked</div></div></td></tr>'; return; }
+  const prioColors = {ACTIVE:'badge-red', WARM:'badge-orange', MONITOR:'badge-gray'};
+  tbody.innerHTML = state.recompetes.map(r => `
+    <tr>
+      <td class="td-primary" style="font-family:'IBM Plex Mono',monospace; font-size:11px;">${r.num}</td>
+      <td>${r.agency}</td>
+      <td style="color:var(--text2);">${r.incumbent}</td>
+      <td style="color:var(--accent2);">${r.value}</td>
+      <td>${r.expiry||'—'}</td>
+      <td style="color:${r.daysLeft<90?'var(--red)':r.daysLeft<180?'var(--accent3)':'var(--text3)'}; font-family:'IBM Plex Mono',monospace;">${r.daysLeft<999?r.daysLeft+'d':'—'}</td>
+      <td><span class="badge ${prioColors[r.priority]||'badge-gray'}">${r.priority}</span></td>
+      <td>
+        <button class="btn btn-ghost" style="font-size:10px; padding:3px 8px;" onclick="analyzeRecompete(${r.id})">🤖 Analyze</button>
+        <button class="btn btn-ghost" style="font-size:10px; padding:3px 8px;" onclick="deleteRecompete(${r.id})">✕</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function deleteRecompete(id) { state.recompetes = state.recompetes.filter(x => x.id !== id); saveData(); renderRecompeteTable(); }
+
+async function analyzeRecompete(id) {
+  const rc = state.recompetes.find(x => x.id === id);
+  if (!rc) return;
+  document.getElementById('detailTitle').textContent = 'Recompete Analysis: ' + rc.num;
+  document.getElementById('detailBody').innerHTML = '<div class="ai-output loading" style="min-height:200px;"><div class="ai-spinner"><span></span><span></span><span></span></div></div>';
+  openModal('modalOppDetail');
+  try {
+    const result = await callClaude(`Analyze this expiring federal contract for recompete strategy:
+
+Contract: ${rc.num}
+Agency: ${rc.agency}
+Incumbent: ${rc.incumbent}
+Value: ${rc.value}
+Expires: ${rc.expiry} (${rc.daysLeft} days)
+NAICS: ${rc.naics}
+
+Provide:
+1. Incumbent Vulnerability Assessment (what weaknesses to probe?)
+2. Win Strategy (how to beat them on this recompete)
+3. Pre-RFP Action Plan (what to do in the next 90 days)
+4. Key Questions to ask the CO on first call
+5. Sole-source opportunity assessment (can we position for sole-source?)
+6. Timeline with specific action dates
+7. Key intelligence to gather before solicitation posts`, 1800);
+    document.getElementById('detailBody').innerHTML = `<div class="ai-output">${result}</div><div style="margin-top:16px;"><button class="btn btn-success" onclick="addRecompeteToPipeline(${rc.id}); closeModal('modalOppDetail');">+ Add to Pipeline</button></div>`;
+  } catch(e) {
+    document.getElementById('detailBody').innerHTML = `<div class="alert alert-danger">Error: ${e.message}</div>`;
+  }
+}
+
+function addRecompeteToPipeline(id) {
+  const rc = state.recompetes.find(x => x.id === id);
+  if (!rc) return;
+  state.pipeline.push({ id: Date.now(), title: `RECOMPETE: ${rc.agency} (${rc.num})`, agency: rc.agency, naics: rc.naics, value: rc.value, deadline: rc.expiry, sol: rc.num, stage: 'tracking', notes: `Incumbent: ${rc.incumbent}` });
+  saveData(); renderPipeline();
+  showToast('Added to pipeline!', 'success');
+}
+
+async function runRecompeteScan() {
+  showToast('USASpending scanner — tip: search usaspending.gov manually for contracts expiring in your NAICS. Filter: Award Type = Contract, set End Date range to next 12 months, filter by NAICS.', 'success');
+  const outputEl = document.getElementById('detailBody');
+  document.getElementById('detailTitle').textContent = 'USASpending Search Guide';
+  document.getElementById('detailBody').innerHTML = `
+    <div class="alert alert-info" style="margin-bottom:16px;">USASpending.gov does not have a public real-time API for this. Use the manual search strategy below.</div>
+    <div class="ai-output" id="recompeteGuide">Generating search strategy...</div>
+  `;
+  openModal('modalOppDetail');
+  try {
+    const result = await callClaude(`Provide a step-by-step guide for finding expiring SDVOSB contracts on USASpending.gov that are ripe for recompete, targeting:
+- NAICS codes: ${(state.profile.naics||[]).join(', ') || '541512, 532283, 621512'}
+- Agencies: VA, DoD, NASA, DOE
+- Contracts expiring in next 6-18 months
+
+Include:
+1. Exact URL and filter settings on USASpending.gov
+2. How to identify SDVOSB set-aside contracts specifically
+3. How to find incumbent contractor contact info
+4. How to cross-reference with SAM.gov for CO contact
+5. What data to record in the recompete tracker
+6. Red flags that mean incumbent is vulnerable`, 1500);
+    document.getElementById('recompeteGuide').textContent = result;
+  } catch(e) { document.getElementById('recompeteGuide').textContent = 'Error: ' + e.message; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MORNING BRIEFING
+// ═══════════════════════════════════════════════════════════════
+async function generateBriefing() {
+  const contentEl = document.getElementById('briefingContent');
+  contentEl.innerHTML = `<div style="text-align:center; padding:64px;"><div class="ai-spinner" style="justify-content:center; margin-bottom:16px;"><span></span><span></span><span></span></div><div style="color:var(--text2);">Generating your personalized morning briefing...</div></div>`;
+
+  const immediateOpps = state.opportunities.filter(o => o.priority === 'IMMEDIATE').slice(0, 5);
+  const highOpps = state.opportunities.filter(o => o.priority === 'HIGH').slice(0, 5);
+  const activeRecompetes = state.recompetes.filter(r => r.priority === 'ACTIVE').slice(0, 5);
+  const pendingPipeline = state.pipeline.filter(o => o.stage === 'responding' || o.stage === 'submitted');
+
+  try {
+    const result = await callClaude(`Generate a concise, high-energy morning intelligence briefing for an SDVOSB federal contractor. Today is ${new Date().toDateString()}.
+
+PIPELINE STATUS:
+- Active pursuits: ${state.pipeline.length}
+- Responding: ${state.pipeline.filter(o=>o.stage==='responding').length}
+- Submitted: ${state.pipeline.filter(o=>o.stage==='submitted').length}
+- Subs in network: ${state.subs.length}
+- COs in database: ${state.cos.length}
+
+IMMEDIATE OPPORTUNITIES (Score 80+, close soon):
+${immediateOpps.map(o => `- ${o.title} | ${(o.fullParentPathName||'').split('.')[0]} | ${o.daysLeft}d left`).join('\n') || 'None found yet — run scanner'}
+
+HIGH PRIORITY:
+${highOpps.map(o => `- ${o.title} | ${o.daysLeft}d left`).join('\n') || 'None found yet'}
+
+ACTIVE RECOMPETES (≤90 days):
+${activeRecompetes.map(r => `- ${r.agency} (${r.num}) | Incumbent: ${r.incumbent} | ${r.daysLeft}d`).join('\n') || 'None tracked'}
+
+PENDING PIPELINE:
+${pendingPipeline.map(o => `- ${o.title} | Stage: ${o.stage}`).join('\n') || 'None in progress'}
+
+Generate a morning briefing with:
+1. EXECUTIVE SUMMARY (3 sentences, energy and urgency)
+2. TODAY'S PRIORITY ACTIONS (numbered, max 5, specific and time-boxed to 2 hours)
+3. THIS WEEK'S FOCUS (3 strategic priorities)
+4. OPPORTUNITY ALERTS (from the data above)
+5. MOTIVATIONAL CLOSE (1 sentence — veteran tone, mission focused)
+
+Format with clear sections. Be direct, tactical, energizing. No fluff.`, 1500);
+
+    contentEl.innerHTML = `
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:8px; overflow:hidden;">
+        <div style="padding:14px 18px; background:var(--bg3); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--accent);">☀ MORNING BRIEFING — ${new Date().toDateString().toUpperCase()}</div>
+          <button class="btn btn-ghost" style="font-size:10px; padding:4px 10px;" onclick="navigator.clipboard.writeText(document.getElementById('briefingText').textContent); showToast('Copied!','success')">COPY</button>
+        </div>
+        <div id="briefingText" style="padding:24px; font-size:14px; line-height:1.8; color:var(--text2); white-space:pre-wrap;">${result}</div>
+      </div>
+    `;
+  } catch(e) {
+    contentEl.innerHTML = `<div class="alert alert-danger">Error generating briefing: ${e.message}<br>Make sure your Claude API key is configured in the Setup tab.</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GAP ANALYSIS
+// ═══════════════════════════════════════════════════════════════
+const KNOWN_GAPS = [
+  {
+    severity: 'critical', title: 'No Past Performance Record',
+    body: 'The #1 killer of new SDVOSB prime contractors. Every RFP requires 3 past performance references. Without them, you\'ll score zero on a major evaluation criterion. Most COs won\'t award a prime contract to a company with zero past performance, regardless of SDVOSB status.',
+    fix: 'IMMEDIATE FIX: Target RFQs under $25K first — no past performance required. Then $25K–$250K simplified acquisitions where past performance is requested but not required. Use key personnel experience as proxy. Consider a mentor-protégé agreement with an established prime to borrow their past performance for proposal purposes.'
+  },
+  {
+    severity: 'critical', title: 'No Subcontractor Network Ready',
+    body: 'You can\'t execute a contract you don\'t have people ready for. If you win an opportunity and spend 2 weeks scrambling for a sub, you\'ll miss the performance deadline and get terminated for default — a career-ending event in federal contracting.',
+    fix: 'SOLUTION: Identify and sign teaming agreements with at least 2 subs per NAICS code you\'re targeting BEFORE pursuing contracts. Use the Sub Intelligence tab to build your network now. Priority: 532283 (DME/oxygen) and 541512 (IT staffing) first.'
+  },
+  {
+    severity: 'high', title: 'SAM.gov Profile Not Optimized for Discovery',
+    body: 'COs search SAM.gov\'s Dynamic Small Business Search (DSBS) when building their vendor lists for set-asides. If your capability narrative is weak, generic, or missing keywords, you won\'t appear in their searches — meaning you never get notified of upcoming sole-source opportunities.',
+    fix: 'ACTION: Update your SBA DSBS profile (separate from SAM.gov) with keyword-rich capability narrative. Include: agency names (VA, DoD, DHS), equipment/service names (DME, oxygen concentrator, CPAP, EHR, cybersecurity), and certifications. Run the AI Draft generator for a Capability Statement, then paste the content into your DSBS profile.'
+  },
+  {
+    severity: 'high', title: 'No GSA Schedule — Missing $50B+ Market',
+    body: 'GSA Multiple Award Schedule (MAS) contracts are not required but dramatically increase your velocity. Many agencies prefer to use existing schedule vehicles — it reduces their paperwork burden. Without a schedule, agencies have to run full competitions. With a schedule, they can place orders directly.',
+    fix: 'PLAN: GSA Schedule takes 3-9 months to obtain. Start the application for Schedule 70 (IT) or Schedule 621I (Professional Healthcare) now in parallel with direct pursuit. Once awarded, it opens a massive additional market with less competition.'
+  },
+  {
+    severity: 'high', title: 'Solo Operator Capacity Risk',
+    body: 'You are one person. If you win 3 contracts simultaneously (which is the goal), you\'ll be managing subcontractors, COs, invoicing, compliance, and pursuing new business all at once. This is where new SDVOSB operators collapse — overwhelm leads to performance issues.',
+    fix: 'PLAN AHEAD: Define your maximum active contract load now (recommend: 3-5 simultaneous). Identify a part-time contracts administrator ($25-40/hr) to handle invoicing and compliance paperwork when you hit capacity. Build your operating procedures (SOPs) before you win your first contract, not after.'
+  },
+  {
+    severity: 'high', title: 'No CAGE Code Capability Narrative Entered',
+    body: 'Your CAGE code appears on every contract action and CO lookup. The capability narrative associated with your CAGE in various databases is often the first thing a CO reads. If it\'s empty or generic, you\'ve already lost the relationship before it started.',
+    fix: 'Use the AI Draft generator (Capability Statement type) to generate a compelling narrative, then enter it into: SAM.gov profile, SBA DSBS, your state\'s PTAC database, and any agency-specific vendor portals for your targets (VA VetBiz, etc.).'
+  },
+  {
+    severity: 'medium', title: 'Q4 Timing Not Built Into Strategy',
+    body: 'July-September is when 35-40% of annual SDVOSB awards happen. Agencies scrambling to hit their 5% goal before October 1 sole-source aggressively. Most new contractors are not positioned for this window because they haven\'t built CO relationships in advance.',
+    fix: 'CALENDAR: Mark July 1 as your "sole-source season opens" date. Start CO outreach NOW so you have warm relationships before the Q4 surge. Use the CO Outreach tab to build your contact database and start emailing target COs today.'
+  },
+  {
+    severity: 'medium', title: 'No Compliance System for Contract Execution',
+    body: 'Federal contracts have mandatory reporting requirements: VETS-4212 (veteran employment), small business subcontracting reports (if over $750K), SAM.gov annual renewal, CAGE renewal, and insurance requirements. Missing compliance deadlines can trigger contract termination.',
+    fix: 'BUILD NOW: Create a compliance calendar tracking: SAM.gov renewal date (annual), CAGE renewal, VetCert renewal (annual), insurance certificate expiration, and any contract-specific reporting dates. Add reminders 60 days before each deadline.'
+  },
+  {
+    severity: 'medium', title: 'Protest Risk Not Accounted For',
+    body: 'Any competitor can file a GAO protest against your award within 10 days of award notice. Protests are common when incumbents lose. A sustained protest can result in your contract being re-competed. This doesn\'t kill you — but it can delay revenue 6-12 months.',
+    fix: 'MITIGATION: Ensure your proposal fully complies with every RFP requirement. Document your SDVOSB status thoroughly. Know the rules of the road for SDVOSB verification. Consider retaining a GovCon attorney on a limited-scope basis for your first major award.'
+  },
+  {
+    severity: 'low', title: 'No Mentor-Protégé Relationship',
+    body: 'The SBA Mentor-Protégé program allows a large prime to mentor your SDVOSB. Benefits: you can joint-venture and the combined entity still qualifies as SDVOSB, you borrow their past performance, their bonding capacity, and their incumbent relationships. This is how small companies punch way above their weight.',
+    fix: 'EXPLORE: Identify 2-3 established prime contractors in your target NAICS codes who don\'t have SDVOSB status but need it to compete on set-asides. Propose a mentor-protégé agreement. They get your SDVOSB certification access; you get their past performance and capacity.'
+  },
+];
+
+function renderGaps() {
+  const el = document.getElementById('gapContent');
+  if (!el) return;
+  const sevOrder = {critical:0, high:1, medium:2, low:3};
+  const sorted = [...KNOWN_GAPS].sort((a,b) => sevOrder[a.severity] - sevOrder[b.severity]);
+
+  el.innerHTML = sorted.map(g => `
+    <div class="gap-card">
+      <div class="gap-header">
+        <div class="gap-severity sev-${g.severity}"></div>
+        <div>
+          <div class="gap-title">${g.title}</div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:${g.severity==='critical'?'var(--red)':g.severity==='high'?'var(--accent3)':g.severity==='medium'?'var(--gold)':'var(--accent2)'}; margin-top:2px;">${g.severity.toUpperCase()}</div>
+        </div>
+      </div>
+      <div class="gap-body">${g.body}</div>
+      <div class="gap-fix">✓ FIX: ${g.fix}</div>
+    </div>
+  `).join('');
+}
+
+async function runAIGapAnalysis() {
+  const el = document.getElementById('gapContent');
+  const profile = state.profile;
+
+  // Show existing gaps first, then append AI analysis
+  renderGaps();
+
+  const aiSection = document.createElement('div');
+  aiSection.innerHTML = `
+    <div style="font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:2px; color:var(--accent); margin: 24px 0 12px;">AI PERSONALIZED ANALYSIS</div>
+    <div class="ai-output loading" id="aiGapOutput" style="min-height:200px;"><div class="ai-spinner"><span></span><span></span><span></span></div></div>
+  `;
+  el.appendChild(aiSection);
+
+  try {
+    const result = await callClaude(`Perform a deep gap analysis on this SDVOSB Apex Middleman contracting strategy.
+
+COMPANY STATUS:
+- Name: ${profile.companyName || 'Not set'}
+- NAICS targets: ${(profile.naics||[]).join(', ') || 'Not selected'}
+- Target agencies: ${(profile.agencies||[]).join(', ') || 'Not selected'}
+- Pipeline size: ${state.pipeline.length} opportunities
+- Sub network: ${state.subs.length} subcontractors
+- CO contacts: ${state.cos.length} contracting officers
+- Recompetes tracked: ${state.recompetes.length}
+- Min contract value target: $${profile.minValue || '100,000'}
+- Max contract value target: $${profile.maxValue || '4,000,000'}
+- Management fee target: ${profile.feePercent || 20}%
+
+Based on this specific company profile, identify:
+1. TOP 5 PERSONALIZED GAPS not already covered in the standard analysis
+2. QUICK WINS available in next 30 days given this specific setup
+3. THE SINGLE MOST IMPORTANT ACTION to take this week
+4. RISK SCENARIOS to prepare for (what could go wrong and how to prevent it)
+5. 90-DAY REVENUE ACCELERATION PLAN specific to this profile
+
+Be brutally honest. This person is counting on this strategy to work.`, 2000);
+
+    document.getElementById('aiGapOutput').classList.remove('loading');
+    document.getElementById('aiGapOutput').textContent = result;
+  } catch(e) {
+    document.getElementById('aiGapOutput').classList.remove('loading');
+    document.getElementById('aiGapOutput').textContent = 'Error: ' + e.message + '\n\nCheck your Claude API key in Setup.';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SETUP FINALIZE
+// ═══════════════════════════════════════════════════════════════
+function finalizeSetup() {
+  saveProfile(); saveKeys();
+  // Pre-load known COs
+  if (state.cos.length === 0) {
+    state.cos.push({
+      id: 1, name: 'Leonard Robinson', title: 'Contracting Officer', agency: 'VA',
+      office: 'VISN 7 Network Contracting Office, Tucker GA', email: 'leonard.robinson@va.gov',
+      phone: '', relationship: 'cold', notes: 'VISN 7 covers AL, GA, SC. Just awarded 36C24726D0017 for home O2/ventilators.', lastContact: null
+    });
+    state.cos.push({
+      id: 2, name: 'Stephen Silversmith', title: 'Contracting Officer', agency: 'IHS',
+      office: 'Gallup Indian Medical Center, NM', email: 'stephen.silversmith@ihs.gov',
+      phone: '', relationship: 'cold', notes: 'Recent mobile CT solicitation 75H71025Q00266. Remote location, low competition.', lastContact: null
+    });
+  }
+  saveData(); renderCOTable(); renderSubTable(); renderPipeline(); renderRecompeteTable();
+  document.querySelectorAll('.step').forEach((s,i) => { s.className = 'step done'; s.querySelector('.step-circle').textContent = '✓'; });
+  showToast('Configuration saved! System ready.', 'success');
+  showTab('gaps');
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab')[1].classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 3500);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════════
+function dlFile(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+</script>
+</body>
+</html>
