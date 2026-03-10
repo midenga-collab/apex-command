@@ -1937,7 +1937,7 @@ Past Performance: ${profile.pastPerf || 'Key personnel with extensive federal co
 
 Always write in professional federal contracting language. Emphasize SDVOSB certification prominently. Keep responses focused and immediately actionable.`;
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch('/api/proxy', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
     body: JSON.stringify({
