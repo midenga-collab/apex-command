@@ -1909,7 +1909,7 @@ async function testKeys() {
       showToast('Claude API connected successfully!', 'success');
     }
   } catch(e) {
-    result.textContent = '✗ Connection failed — check key';
+        result.textContent = '✗ ' + (e.message || 'Connection failed');
     result.style.color = 'var(--red)';
   }
 }
