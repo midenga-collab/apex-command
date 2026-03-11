@@ -1881,7 +1881,7 @@ function showTab(id) {
 // KEY CHECK
 // ═══════════════════════════════════════════════════════════════
 function checkKeys() {
-  const hasClaude = v('claudeKey').length > 20;
+    const hasClaude = true; // API key is server-side via Vercel proxy
   const hasSAM = v('samKey').length > 10;
   const statusEl = document.getElementById('apiStatus');
   if (hasClaude && hasSAM) {
@@ -1900,7 +1900,7 @@ async function testKeys() {
   const result = document.getElementById('keyTestResult');
   result.textContent = 'Testing...';
   const claudeKey = v('claudeKey');
-  if (!claudeKey) { result.textContent = '✗ No Claude key entered'; return; }
+  
   try {
     const res = await callClaude('Say "APEX ONLINE" and nothing else.', 50);
     if (res.includes('APEX') || res.includes('online') || res.length > 0) {
@@ -1919,7 +1919,6 @@ async function testKeys() {
 // ═══════════════════════════════════════════════════════════════
 async function callClaude(prompt, maxTokens = 1800, systemPrompt = null) {
   const key = v('claudeKey') || state.keys.claude;
-  if (!key) throw new Error('No Claude API key configured. Go to Setup tab.');
 
   const profile = state.profile;
   const defaultSystem = `You are an expert federal government contracting strategist and proposal writer specializing in SDVOSB (Service-Disabled Veteran-Owned Small Business) contracts. You help operators win federal contracts using the Apex Middleman model.
@@ -3106,3 +3105,4 @@ function dlFile(content, filename, type) {
 </script>
 </body>
 </html>
+async function testKeys
